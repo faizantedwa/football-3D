@@ -1,13 +1,8 @@
-/* =========================================================
-   LOCAL FOOTBALL 3D
-   styles.css
-   Landscape Mobile Football Game
-   ========================================================= */
-
 * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
     -webkit-tap-highlight-color: transparent;
-    -webkit-user-select: none;
     user-select: none;
 }
 
@@ -15,716 +10,620 @@ html,
 body {
     width: 100%;
     height: 100%;
-    margin: 0;
-    padding: 0;
     overflow: hidden;
-    background: #07120c;
-    font-family: Arial, Helvetica, sans-serif;
-    color: #ffffff;
+    background: #05070b;
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 }
 
 body {
-    position: fixed;
-    inset: 0;
     touch-action: none;
 }
 
-button {
-    border: 0;
-    outline: none;
-    cursor: pointer;
-    color: #ffffff;
-    font-family: inherit;
-    touch-action: manipulation;
-}
 
-button:active {
-    transform: scale(0.94);
-}
-
-
-/* =========================================================
+/* =========================
    COMMON
-   ========================================================= */
+========================= */
 
 .hidden {
     display: none !important;
 }
 
-.screen {
-    position: absolute;
+
+/* =========================
+   LOADING
+========================= */
+
+#loadingScreen {
+    position: fixed;
     inset: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #10284a 0%,
+            #05070b 65%
+        );
+
+    color: white;
+
+    z-index: 9999;
+}
+
+.loadingLogo {
+    font-size: 80px;
+    margin-bottom: 15px;
+
+    filter:
+        drop-shadow(0 0 20px #00aaff);
+}
+
+.loadingTitle {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 2px;
+
+    text-align: center;
+}
+
+.loadingText {
+    margin-top: 15px;
+
+    font-size: 15px;
+    color: #9db8d5;
+}
+
+.loadingBar {
+    width: 280px;
+    height: 12px;
+
+    margin-top: 25px;
+
+    background: #172033;
+
+    border-radius: 20px;
+
+    overflow: hidden;
+}
+
+#loadingProgress {
+    width: 0%;
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #008cff,
+            #00eaff
+        );
+
+    transition:
+        width 0.15s linear;
+}
+
+#loadingPercent {
+    margin-top: 10px;
+
+    font-size: 14px;
+
+    color: #ffffff;
+}
+
+
+/* =========================
+   MENU
+========================= */
+
+#menuScreen {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    background:
+        radial-gradient(
+            circle,
+            #102c4b,
+            #05070b 70%
+        );
+
+    color: white;
+}
+
+.menuBox {
+    width: min(90%, 430px);
+
+    padding: 35px;
+
+    text-align: center;
+
+    border-radius: 25px;
+
+    background:
+        rgba(12, 20, 34, 0.94);
+
+    border:
+        1px solid rgba(255,255,255,0.12);
+
+    box-shadow:
+        0 20px 70px rgba(0,0,0,0.7);
+}
+
+.gameLogo {
+    font-size: 80px;
+
+    filter:
+        drop-shadow(0 0 25px #00aaff);
+}
+
+.menuBox h1 {
+    margin-top: 10px;
+
+    font-size: 28px;
+    font-weight: 900;
+}
+
+.menuBox p {
+    margin: 8px 0 25px;
+
+    color: #91a6bf;
+
+    font-size: 13px;
+    letter-spacing: 2px;
+}
+
+.menuBox button,
+.helpBox button,
+.pauseMenu button {
+
+    width: 100%;
+
+    border: none;
+
+    border-radius: 15px;
+
+    padding: 17px;
+
+    margin-top: 12px;
+
+    font-size: 17px;
+
+    font-weight: 900;
+
+    color: white;
+
+    background: #087cff;
+
+    cursor: pointer;
+}
+
+.menuBox button:active,
+.helpBox button:active,
+.pauseMenu button:active {
+    transform: scale(0.97);
+}
+
+.menuBox button:last-child {
+    background: #26354b;
+}
+
+
+/* =========================
+   GAME
+========================= */
+
+#gameScreen {
+    position: fixed;
+    inset: 0;
+
+    background: #000;
+
+    overflow: hidden;
+}
+
+#gameCanvas {
+    position: absolute;
+
+    left: 0;
+    top: 0;
+
     width: 100%;
     height: 100%;
-    overflow: hidden;
-}
 
+    display: block;
 
-/* =========================================================
-   MAIN MENU
-   ========================================================= */
-
-#screen-menu {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background:
-        radial-gradient(
-            circle at center,
-            #173d24 0%,
-            #08160d 55%,
-            #030805 100%
-        );
+        #087a32;
 }
 
-.menu-box {
-    width: min(92vw, 620px);
-    padding: 28px;
-    text-align: center;
-    border-radius: 24px;
-    background: rgba(8, 24, 14, 0.92);
-    border: 2px solid rgba(255, 255, 255, 0.12);
-    box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.65);
-}
 
-.game-title {
-    margin: 0 0 8px;
-    font-size: clamp(30px, 7vw, 58px);
-    font-weight: 900;
-    letter-spacing: 2px;
-}
+/* =========================
+   SCORE
+========================= */
 
-.game-subtitle {
-    margin: 0 0 24px;
-    opacity: 0.72;
-    font-size: 14px;
-}
+#scoreBoard {
 
-.menu-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
+    position: absolute;
 
-.menu-button {
-    min-height: 52px;
-    padding: 12px 20px;
+    top: 15px;
+    left: 50%;
+
+    transform:
+        translateX(-50%);
+
+    padding:
+        10px 22px;
+
     border-radius: 14px;
-    font-size: 16px;
-    font-weight: 800;
-    background: #176b36;
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.15),
-        0 8px 20px rgba(0,0,0,0.25);
-}
-
-.menu-button:hover {
-    background: #218746;
-}
-
-
-/* =========================================================
-   MODE / LOBBY / SETTINGS
-   ========================================================= */
-
-.center-panel {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(90vw, 540px);
-    padding: 28px;
-    text-align: center;
-    border-radius: 22px;
-    background: rgba(7, 20, 12, 0.94);
-    border: 1px solid rgba(255,255,255,0.12);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-}
-
-.center-panel h1 {
-    margin-top: 0;
-    font-size: 28px;
-}
-
-.center-panel p {
-    opacity: 0.75;
-    line-height: 1.5;
-}
-
-.panel-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
-}
-
-.panel-button {
-    min-height: 50px;
-    padding: 12px 18px;
-    border-radius: 13px;
-    background: #185f32;
-    font-weight: 800;
-}
-
-.panel-button.secondary {
-    background: #25322a;
-}
-
-.panel-button.danger {
-    background: #742c2c;
-}
-
-
-/* =========================================================
-   ROOM CODE
-   ========================================================= */
-
-#room-code {
-    display: inline-block;
-    margin: 14px 0;
-    padding: 12px 18px;
-    border-radius: 12px;
-    background: #050b07;
-    border: 1px solid rgba(255,255,255,0.15);
-    font-weight: 900;
-    letter-spacing: 2px;
-}
-
-#connection-status {
-    min-height: 24px;
-    margin: 10px 0;
-}
-
-
-/* =========================================================
-   GAME SCREEN
-   ========================================================= */
-
-#screen-game {
-    background: #06130a;
-}
-
-
-/* =========================================================
-   GAME FIELD
-   ========================================================= */
-
-#field {
-    position: absolute;
-    left: 5%;
-    top: 7%;
-    width: 90%;
-    height: 86%;
-    overflow: hidden;
 
     background:
-        repeating-linear-gradient(
-            90deg,
-            #16753a 0,
-            #16753a 9%,
-            #196f38 9%,
-            #196f38 18%
-        );
+        rgba(0,0,0,0.65);
 
-    border: 3px solid rgba(255,255,255,0.9);
+    color: white;
 
-    box-shadow:
-        0 0 0 5px rgba(0,0,0,0.25),
-        0 15px 45px rgba(0,0,0,0.6);
+    font-size: 17px;
 
-    transform: perspective(900px) rotateX(1deg);
-}
+    font-weight: 900;
 
-
-/* =========================================================
-   FIELD LINES
-   ========================================================= */
-
-.field-line {
-    position: absolute;
-    pointer-events: none;
-}
-
-.field-half-line {
-    left: 50%;
-    top: 0;
-    width: 2px;
-    height: 100%;
-    background: rgba(255,255,255,0.85);
-    transform: translateX(-50%);
-}
-
-.field-center-circle {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 20%;
-    aspect-ratio: 1;
-    border: 2px solid rgba(255,255,255,0.85);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.field-center-dot {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #ffffff;
-    transform: translate(-50%, -50%);
-}
-
-.penalty-area-left {
-    position: absolute;
-    left: 0;
-    top: 27%;
-    width: 14%;
-    height: 46%;
-    border: 2px solid rgba(255,255,255,0.85);
-    border-left: 0;
-}
-
-.penalty-area-right {
-    position: absolute;
-    right: 0;
-    top: 27%;
-    width: 14%;
-    height: 46%;
-    border: 2px solid rgba(255,255,255,0.85);
-    border-right: 0;
-}
-
-.goal-left {
-    position: absolute;
-    left: -3%;
-    top: 38%;
-    width: 3%;
-    height: 24%;
-    border: 3px solid #ffffff;
-    background: rgba(255,255,255,0.08);
-}
-
-.goal-right {
-    position: absolute;
-    right: -3%;
-    top: 38%;
-    width: 3%;
-    height: 24%;
-    border: 3px solid #ffffff;
-    background: rgba(255,255,255,0.08);
-}
-
-
-/* =========================================================
-   PLAYERS
-   ========================================================= */
-
-.player {
-    position: absolute;
     z-index: 20;
 
-    width: clamp(25px, 5vw, 48px);
-    height: clamp(25px, 5vw, 48px);
-
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: clamp(9px, 1.7vw, 15px);
-    font-weight: 900;
-
-    border: 2px solid rgba(255,255,255,0.9);
-
-    box-shadow:
-        0 5px 12px rgba(0,0,0,0.45);
-
-    transform: translate(-50%, -50%);
+    white-space: nowrap;
 }
 
-#player1 {
-    background:
-        radial-gradient(
-            circle at 35% 30%,
-            #5cb8ff,
-            #1264b0 65%,
-            #07345d
-        );
+#blueScore {
+    color: #48aaff;
 }
 
-#player2 {
-    background:
-        radial-gradient(
-            circle at 35% 30%,
-            #ff7777,
-            #b51d1d 65%,
-            #650b0b
-        );
+#redScore {
+    color: #ff5555;
 }
 
 
-/* =========================================================
-   BALL
-   ========================================================= */
+/* =========================
+   MESSAGE
+========================= */
 
-#ball {
+#gameMessage {
+
     position: absolute;
-    z-index: 25;
-
-    width: clamp(13px, 2.8vw, 28px);
-    height: clamp(13px, 2.8vw, 28px);
-
-    border-radius: 50%;
-
-    background:
-        radial-gradient(
-            circle at 35% 30%,
-            #ffffff 0%,
-            #eeeeee 55%,
-            #a8a8a8 100%
-        );
-
-    border: 1px solid rgba(0,0,0,0.35);
-
-    box-shadow:
-        0 4px 8px rgba(0,0,0,0.45);
-
-    transform: translate(-50%, -50%);
-}
-
-
-/* =========================================================
-   SCOREBOARD
-   ========================================================= */
-
-#scoreboard {
-    position: absolute;
-    z-index: 100;
 
     left: 50%;
-    top: 2%;
+    top: 27%;
 
-    transform: translateX(-50%);
+    transform:
+        translate(-50%, -50%);
 
-    min-width: 120px;
-    padding: 8px 18px;
+    color: white;
 
-    text-align: center;
+    font-size: 30px;
+
+    font-weight: 900;
+
+    text-shadow:
+        0 3px 15px #000;
+
+    pointer-events: none;
+
+    z-index: 30;
+}
+
+
+/* =========================
+   JOYSTICK
+========================= */
+
+#controls {
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: 210px;
+
+    pointer-events: none;
+
+    z-index: 50;
+}
+
+#joystickArea {
+
+    position: absolute;
+
+    left: 25px;
+    bottom: 25px;
+
+    width: 145px;
+    height: 145px;
+
+    pointer-events: auto;
+}
+
+#joystick {
+
+    position: absolute;
+
+    width: 125px;
+    height: 125px;
+
+    left: 10px;
+    top: 10px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(0,0,0,0.35);
+
+    border:
+        2px solid
+        rgba(255,255,255,0.3);
+}
+
+#joystickKnob {
+
+    position: absolute;
+
+    width: 55px;
+    height: 55px;
+
+    left: 33px;
+    top: 33px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,0.75);
+
+    box-shadow:
+        0 4px 15px
+        rgba(0,0,0,0.4);
+}
+
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+
+#actionButtons {
+
+    position: absolute;
+
+    right: 25px;
+    bottom: 28px;
+
+    display: flex;
+
+    gap: 15px;
+
+    pointer-events: auto;
+}
+
+.gameButton {
+
+    width: 80px;
+    height: 80px;
+
+    border-radius: 50%;
+
+    border:
+        3px solid
+        rgba(255,255,255,0.4);
+
+    color: white;
+
+    font-size: 13px;
+
+    font-weight: 900;
+
+    background:
+        rgba(20,100,220,0.85);
+}
+
+.gameButton.shoot {
+    width: 95px;
+    height: 95px;
+
+    background:
+        rgba(220,45,45,0.9);
+}
+
+.gameButton:active {
+    transform: scale(0.9);
+}
+
+
+/* =========================
+   PAUSE
+========================= */
+
+.pauseButton {
+
+    position: absolute;
+
+    right: 15px;
+    top: 15px;
+
+    width: 45px;
+    height: 45px;
+
+    border: none;
 
     border-radius: 12px;
 
-    background: rgba(0,0,0,0.78);
+    color: white;
 
-    border: 1px solid rgba(255,255,255,0.15);
+    background:
+        rgba(0,0,0,0.65);
 
-    font-size: clamp(16px, 3vw, 25px);
+    font-size: 18px;
+
     font-weight: 900;
+
+    z-index: 100;
 }
 
-#score {
-    letter-spacing: 3px;
-}
 
+/* =========================
+   PAUSE MENU
+========================= */
 
-/* =========================================================
-   GAME MESSAGE
-   ========================================================= */
+.pauseMenu {
 
-#game-message {
     position: absolute;
-    z-index: 200;
 
     left: 50%;
     top: 50%;
 
-    transform: translate(-50%, -50%);
+    transform:
+        translate(-50%, -50%);
 
-    padding: 14px 26px;
+    width: min(85%, 360px);
 
-    border-radius: 14px;
+    padding: 30px;
 
-    background: rgba(0,0,0,0.82);
+    background:
+        rgba(5,10,18,0.96);
 
-    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 22px;
 
-    font-size: clamp(18px, 4vw, 32px);
-    font-weight: 900;
+    color: white;
 
     text-align: center;
 
-    pointer-events: none;
+    z-index: 200;
+}
+
+.pauseMenu h2 {
+    font-size: 30px;
+}
+
+.pauseMenu button:last-child {
+    background: #333f52;
 }
 
 
-/* =========================================================
-   GAME MENU BUTTON
-   ========================================================= */
+/* =========================
+   HELP
+========================= */
 
-#btn-game-menu {
-    position: absolute;
-    z-index: 300;
+.overlay {
 
-    left: 1.5%;
-    top: 2%;
+    position: fixed;
 
-    width: 46px;
-    height: 42px;
-
-    border-radius: 12px;
-
-    background: rgba(0,0,0,0.72);
-
-    font-size: 20px;
-    font-weight: 900;
-}
-
-
-/* =========================================================
-   TOUCH CONTROLS
-   ========================================================= */
-
-.touch-control {
-    position: absolute;
-    z-index: 500;
-
-    width: clamp(38px, 7vw, 68px);
-    height: clamp(38px, 7vw, 68px);
-
-    border-radius: 50%;
-
-    background: rgba(0,0,0,0.58);
-
-    border: 2px solid rgba(255,255,255,0.28);
+    inset: 0;
 
     display: flex;
-    align-items: center;
+
     justify-content: center;
+    align-items: center;
 
-    font-size: clamp(15px, 3vw, 26px);
-    font-weight: 900;
-
-    box-shadow:
-        0 6px 15px rgba(0,0,0,0.35);
-}
-
-
-/* =========================================================
-   PLAYER 1 JOYSTICK
-   ========================================================= */
-
-#control-up {
-    left: 5%;
-    bottom: 22%;
-}
-
-#control-down {
-    left: 5%;
-    bottom: 4%;
-}
-
-#control-left {
-    left: 0.8%;
-    bottom: 13%;
-}
-
-#control-right {
-    left: 9.2%;
-    bottom: 13%;
-}
-
-
-/* =========================================================
-   PLAYER 1 ACTIONS
-   ========================================================= */
-
-#control-pass {
-    right: 16%;
-    bottom: 18%;
-
-    background: rgba(30,90,150,0.78);
-}
-
-#control-shoot {
-    right: 5%;
-    bottom: 7%;
-
-    width: clamp(52px, 9vw, 82px);
-    height: clamp(52px, 9vw, 82px);
-
-    background: rgba(170,35,35,0.82);
-
-    font-size: clamp(14px, 2.8vw, 23px);
-}
-
-
-/* =========================================================
-   PLAYER 2 CONTROLS
-   ========================================================= */
-
-#p2-up {
-    right: 5%;
-    top: 22%;
-}
-
-#p2-down {
-    right: 5%;
-    top: 4%;
-}
-
-#p2-left {
-    right: 9.2%;
-    top: 13%;
-}
-
-#p2-right {
-    right: 0.8%;
-    top: 13%;
-}
-
-#p2-pass {
-    left: 16%;
-    top: 18%;
-    background: rgba(30,90,150,0.78);
-}
-
-#p2-shoot {
-    left: 5%;
-    top: 7%;
-
-    width: clamp(52px, 9vw, 82px);
-    height: clamp(52px, 9vw, 82px);
-
-    background: rgba(170,35,35,0.82);
-}
-
-
-/* =========================================================
-   TRAINING SCREEN
-   ========================================================= */
-
-#screen-training {
     background:
-        radial-gradient(
-            circle at center,
-            #174523,
-            #061009
-        );
+        rgba(0,0,0,0.8);
+
+    z-index: 500;
+}
+
+.helpBox {
+
+    width: min(88%, 420px);
+
+    padding: 28px;
+
+    background: #101827;
+
+    border-radius: 22px;
+
+    color: white;
+
+    text-align: center;
+}
+
+.helpBox h2 {
+    margin-bottom: 20px;
+}
+
+.helpBox p {
+
+    margin:
+        13px 0;
+
+    color:
+        #c5d0df;
+
+    text-align: left;
 }
 
 
-/* =========================================================
-   SETTINGS
-   ========================================================= */
+/* =========================
+   LANDSCAPE
+========================= */
 
-#screen-settings {
-    background:
-        radial-gradient(
-            circle at center,
-            #14291c,
-            #050b07
-        );
-}
+@media (orientation: landscape) {
 
-
-/* =========================================================
-   MOBILE LANDSCAPE
-   ========================================================= */
-
-@media screen and (orientation: portrait) {
-
-    #screen-game::before {
-        content: "PLEASE ROTATE YOUR PHONE";
-        position: absolute;
-        z-index: 1000;
-
-        inset: 0;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        background: #050806;
-
-        color: #ffffff;
-
-        font-size: 22px;
-        font-weight: 900;
-
-        text-align: center;
+    #controls {
+        height: 175px;
     }
 
-    #screen-game > * {
-        opacity: 0.15;
-    }
-}
-
-
-/* =========================================================
-   SMALL LANDSCAPE PHONES
-   ========================================================= */
-
-@media screen and (orientation: landscape)
-       and (max-height: 420px) {
-
-    #field {
-        top: 8%;
-        height: 84%;
+    #joystickArea {
+        bottom: 18px;
     }
 
-    #scoreboard {
-        top: 1%;
-        padding: 5px 14px;
+    #actionButtons {
+        bottom: 18px;
     }
 
-    .touch-control {
-        opacity: 0.88;
+    .loadingTitle {
+        font-size: 26px;
     }
 }
 
 
-/* =========================================================
-   VERY SMALL DEVICES
-   ========================================================= */
+/* =========================
+   SMALL PHONES
+========================= */
 
-@media screen and (max-width: 650px) {
+@media (max-height: 450px) {
 
-    .menu-box {
-        padding: 20px;
+    #controls {
+        height: 145px;
     }
 
-    .center-panel {
-        padding: 20px;
+    #joystickArea {
+        transform: scale(0.8);
+        transform-origin: bottom left;
+        bottom: 5px;
     }
 
-    .game-title {
-        font-size: 32px;
+    #actionButtons {
+        transform: scale(0.8);
+        transform-origin: bottom right;
+        bottom: 5px;
     }
-}
 
-
-/* =========================================================
-   REDUCE SELECTION / FLASH
-   ========================================================= */
-
-img,
-button,
-div {
-    -webkit-touch-callout: none;
-}
-
-
-/* =========================================================
-   SAFE AREA
-   ========================================================= */
-
-@supports (padding: env(safe-area-inset-top)) {
-
-    .screen {
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
+    #scoreBoard {
+        top: 8px;
+        font-size: 14px;
     }
-}
+
+    .gameButton {
+        width: 65px;
+        height: 65px;
+    }
+
+    .gameButton.shoot {
+        width: 75px;
+        height: 75px;
+    }
+   }
