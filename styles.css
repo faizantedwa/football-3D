@@ -1,0 +1,730 @@
+/* =========================================================
+   LOCAL FOOTBALL 3D
+   styles.css
+   Landscape Mobile Football Game
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #07120c;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #ffffff;
+}
+
+body {
+    position: fixed;
+    inset: 0;
+    touch-action: none;
+}
+
+button {
+    border: 0;
+    outline: none;
+    cursor: pointer;
+    color: #ffffff;
+    font-family: inherit;
+    touch-action: manipulation;
+}
+
+button:active {
+    transform: scale(0.94);
+}
+
+
+/* =========================================================
+   COMMON
+   ========================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   MAIN MENU
+   ========================================================= */
+
+#screen-menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(
+            circle at center,
+            #173d24 0%,
+            #08160d 55%,
+            #030805 100%
+        );
+}
+
+.menu-box {
+    width: min(92vw, 620px);
+    padding: 28px;
+    text-align: center;
+    border-radius: 24px;
+    background: rgba(8, 24, 14, 0.92);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.65);
+}
+
+.game-title {
+    margin: 0 0 8px;
+    font-size: clamp(30px, 7vw, 58px);
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.game-subtitle {
+    margin: 0 0 24px;
+    opacity: 0.72;
+    font-size: 14px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.menu-button {
+    min-height: 52px;
+    padding: 12px 20px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 800;
+    background: #176b36;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        0 8px 20px rgba(0,0,0,0.25);
+}
+
+.menu-button:hover {
+    background: #218746;
+}
+
+
+/* =========================================================
+   MODE / LOBBY / SETTINGS
+   ========================================================= */
+
+.center-panel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(90vw, 540px);
+    padding: 28px;
+    text-align: center;
+    border-radius: 22px;
+    background: rgba(7, 20, 12, 0.94);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.center-panel h1 {
+    margin-top: 0;
+    font-size: 28px;
+}
+
+.center-panel p {
+    opacity: 0.75;
+    line-height: 1.5;
+}
+
+.panel-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.panel-button {
+    min-height: 50px;
+    padding: 12px 18px;
+    border-radius: 13px;
+    background: #185f32;
+    font-weight: 800;
+}
+
+.panel-button.secondary {
+    background: #25322a;
+}
+
+.panel-button.danger {
+    background: #742c2c;
+}
+
+
+/* =========================================================
+   ROOM CODE
+   ========================================================= */
+
+#room-code {
+    display: inline-block;
+    margin: 14px 0;
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: #050b07;
+    border: 1px solid rgba(255,255,255,0.15);
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+#connection-status {
+    min-height: 24px;
+    margin: 10px 0;
+}
+
+
+/* =========================================================
+   GAME SCREEN
+   ========================================================= */
+
+#screen-game {
+    background: #06130a;
+}
+
+
+/* =========================================================
+   GAME FIELD
+   ========================================================= */
+
+#field {
+    position: absolute;
+    left: 5%;
+    top: 7%;
+    width: 90%;
+    height: 86%;
+    overflow: hidden;
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            #16753a 0,
+            #16753a 9%,
+            #196f38 9%,
+            #196f38 18%
+        );
+
+    border: 3px solid rgba(255,255,255,0.9);
+
+    box-shadow:
+        0 0 0 5px rgba(0,0,0,0.25),
+        0 15px 45px rgba(0,0,0,0.6);
+
+    transform: perspective(900px) rotateX(1deg);
+}
+
+
+/* =========================================================
+   FIELD LINES
+   ========================================================= */
+
+.field-line {
+    position: absolute;
+    pointer-events: none;
+}
+
+.field-half-line {
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: rgba(255,255,255,0.85);
+    transform: translateX(-50%);
+}
+
+.field-center-circle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 20%;
+    aspect-ratio: 1;
+    border: 2px solid rgba(255,255,255,0.85);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.field-center-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ffffff;
+    transform: translate(-50%, -50%);
+}
+
+.penalty-area-left {
+    position: absolute;
+    left: 0;
+    top: 27%;
+    width: 14%;
+    height: 46%;
+    border: 2px solid rgba(255,255,255,0.85);
+    border-left: 0;
+}
+
+.penalty-area-right {
+    position: absolute;
+    right: 0;
+    top: 27%;
+    width: 14%;
+    height: 46%;
+    border: 2px solid rgba(255,255,255,0.85);
+    border-right: 0;
+}
+
+.goal-left {
+    position: absolute;
+    left: -3%;
+    top: 38%;
+    width: 3%;
+    height: 24%;
+    border: 3px solid #ffffff;
+    background: rgba(255,255,255,0.08);
+}
+
+.goal-right {
+    position: absolute;
+    right: -3%;
+    top: 38%;
+    width: 3%;
+    height: 24%;
+    border: 3px solid #ffffff;
+    background: rgba(255,255,255,0.08);
+}
+
+
+/* =========================================================
+   PLAYERS
+   ========================================================= */
+
+.player {
+    position: absolute;
+    z-index: 20;
+
+    width: clamp(25px, 5vw, 48px);
+    height: clamp(25px, 5vw, 48px);
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: clamp(9px, 1.7vw, 15px);
+    font-weight: 900;
+
+    border: 2px solid rgba(255,255,255,0.9);
+
+    box-shadow:
+        0 5px 12px rgba(0,0,0,0.45);
+
+    transform: translate(-50%, -50%);
+}
+
+#player1 {
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #5cb8ff,
+            #1264b0 65%,
+            #07345d
+        );
+}
+
+#player2 {
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #ff7777,
+            #b51d1d 65%,
+            #650b0b
+        );
+}
+
+
+/* =========================================================
+   BALL
+   ========================================================= */
+
+#ball {
+    position: absolute;
+    z-index: 25;
+
+    width: clamp(13px, 2.8vw, 28px);
+    height: clamp(13px, 2.8vw, 28px);
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #ffffff 0%,
+            #eeeeee 55%,
+            #a8a8a8 100%
+        );
+
+    border: 1px solid rgba(0,0,0,0.35);
+
+    box-shadow:
+        0 4px 8px rgba(0,0,0,0.45);
+
+    transform: translate(-50%, -50%);
+}
+
+
+/* =========================================================
+   SCOREBOARD
+   ========================================================= */
+
+#scoreboard {
+    position: absolute;
+    z-index: 100;
+
+    left: 50%;
+    top: 2%;
+
+    transform: translateX(-50%);
+
+    min-width: 120px;
+    padding: 8px 18px;
+
+    text-align: center;
+
+    border-radius: 12px;
+
+    background: rgba(0,0,0,0.78);
+
+    border: 1px solid rgba(255,255,255,0.15);
+
+    font-size: clamp(16px, 3vw, 25px);
+    font-weight: 900;
+}
+
+#score {
+    letter-spacing: 3px;
+}
+
+
+/* =========================================================
+   GAME MESSAGE
+   ========================================================= */
+
+#game-message {
+    position: absolute;
+    z-index: 200;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%);
+
+    padding: 14px 26px;
+
+    border-radius: 14px;
+
+    background: rgba(0,0,0,0.82);
+
+    border: 2px solid rgba(255,255,255,0.2);
+
+    font-size: clamp(18px, 4vw, 32px);
+    font-weight: 900;
+
+    text-align: center;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   GAME MENU BUTTON
+   ========================================================= */
+
+#btn-game-menu {
+    position: absolute;
+    z-index: 300;
+
+    left: 1.5%;
+    top: 2%;
+
+    width: 46px;
+    height: 42px;
+
+    border-radius: 12px;
+
+    background: rgba(0,0,0,0.72);
+
+    font-size: 20px;
+    font-weight: 900;
+}
+
+
+/* =========================================================
+   TOUCH CONTROLS
+   ========================================================= */
+
+.touch-control {
+    position: absolute;
+    z-index: 500;
+
+    width: clamp(38px, 7vw, 68px);
+    height: clamp(38px, 7vw, 68px);
+
+    border-radius: 50%;
+
+    background: rgba(0,0,0,0.58);
+
+    border: 2px solid rgba(255,255,255,0.28);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: clamp(15px, 3vw, 26px);
+    font-weight: 900;
+
+    box-shadow:
+        0 6px 15px rgba(0,0,0,0.35);
+}
+
+
+/* =========================================================
+   PLAYER 1 JOYSTICK
+   ========================================================= */
+
+#control-up {
+    left: 5%;
+    bottom: 22%;
+}
+
+#control-down {
+    left: 5%;
+    bottom: 4%;
+}
+
+#control-left {
+    left: 0.8%;
+    bottom: 13%;
+}
+
+#control-right {
+    left: 9.2%;
+    bottom: 13%;
+}
+
+
+/* =========================================================
+   PLAYER 1 ACTIONS
+   ========================================================= */
+
+#control-pass {
+    right: 16%;
+    bottom: 18%;
+
+    background: rgba(30,90,150,0.78);
+}
+
+#control-shoot {
+    right: 5%;
+    bottom: 7%;
+
+    width: clamp(52px, 9vw, 82px);
+    height: clamp(52px, 9vw, 82px);
+
+    background: rgba(170,35,35,0.82);
+
+    font-size: clamp(14px, 2.8vw, 23px);
+}
+
+
+/* =========================================================
+   PLAYER 2 CONTROLS
+   ========================================================= */
+
+#p2-up {
+    right: 5%;
+    top: 22%;
+}
+
+#p2-down {
+    right: 5%;
+    top: 4%;
+}
+
+#p2-left {
+    right: 9.2%;
+    top: 13%;
+}
+
+#p2-right {
+    right: 0.8%;
+    top: 13%;
+}
+
+#p2-pass {
+    left: 16%;
+    top: 18%;
+    background: rgba(30,90,150,0.78);
+}
+
+#p2-shoot {
+    left: 5%;
+    top: 7%;
+
+    width: clamp(52px, 9vw, 82px);
+    height: clamp(52px, 9vw, 82px);
+
+    background: rgba(170,35,35,0.82);
+}
+
+
+/* =========================================================
+   TRAINING SCREEN
+   ========================================================= */
+
+#screen-training {
+    background:
+        radial-gradient(
+            circle at center,
+            #174523,
+            #061009
+        );
+}
+
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+
+#screen-settings {
+    background:
+        radial-gradient(
+            circle at center,
+            #14291c,
+            #050b07
+        );
+}
+
+
+/* =========================================================
+   MOBILE LANDSCAPE
+   ========================================================= */
+
+@media screen and (orientation: portrait) {
+
+    #screen-game::before {
+        content: "PLEASE ROTATE YOUR PHONE";
+        position: absolute;
+        z-index: 1000;
+
+        inset: 0;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #050806;
+
+        color: #ffffff;
+
+        font-size: 22px;
+        font-weight: 900;
+
+        text-align: center;
+    }
+
+    #screen-game > * {
+        opacity: 0.15;
+    }
+}
+
+
+/* =========================================================
+   SMALL LANDSCAPE PHONES
+   ========================================================= */
+
+@media screen and (orientation: landscape)
+       and (max-height: 420px) {
+
+    #field {
+        top: 8%;
+        height: 84%;
+    }
+
+    #scoreboard {
+        top: 1%;
+        padding: 5px 14px;
+    }
+
+    .touch-control {
+        opacity: 0.88;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL DEVICES
+   ========================================================= */
+
+@media screen and (max-width: 650px) {
+
+    .menu-box {
+        padding: 20px;
+    }
+
+    .center-panel {
+        padding: 20px;
+    }
+
+    .game-title {
+        font-size: 32px;
+    }
+}
+
+
+/* =========================================================
+   REDUCE SELECTION / FLASH
+   ========================================================= */
+
+img,
+button,
+div {
+    -webkit-touch-callout: none;
+}
+
+
+/* =========================================================
+   SAFE AREA
+   ========================================================= */
+
+@supports (padding: env(safe-area-inset-top)) {
+
+    .screen {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
