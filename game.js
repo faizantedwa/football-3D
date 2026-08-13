@@ -3,351 +3,415 @@ document.addEventListener("DOMContentLoaded", function () {
     "use strict";
 
     /* =========================================================
-       LOCAL FOOTBALL 3D
+       FOOTBALL 3D-STYLE LOCAL GAME
        game.js
        ========================================================= */
 
+    var canvas = document.getElementById("gameCanvas");
 
-    /* =========================================================
-       HELPERS
-       ========================================================= */
-
-    function get(id) {
-        return document.getElementById(id);
+    if (!canvas) {
+        canvas = document.createElement("canvas");
+        canvas.id = "gameCanvas";
+        document.body.appendChild(canvas);
     }
 
-    function show(id) {
-        var el = get(id);
+    var ctx = canvas.getContext("2d");
 
-        if (el) {
-            el.classList.remove("hidden");
-        }
-    }
-
-    function hide(id) {
-        var el = get(id);
-
-        if (el) {
-            el.classList.add("hidden");
-        }
+    if (!ctx) {
+        return;
     }
 
 
     /* =========================================================
-       SCREENS
+       CANVAS / FULL SCREEN
        ========================================================= */
 
-    var screens = [
-        "screen-menu",
-        "screen-mode",
-        "screen-lobby",
-        "screen-game",
-        "screen-training",
-        "screen-settings"
-    ];
+    var W = 1280;
+    var H = 720;
 
+    function resizeCanvas() {
 
-    function showScreen(screenId) {
+        var width =
+            window.innerWidth ||
+            document.documentElement.clientWidth ||
+            1280;
 
-        for (var i = 0; i < screens.length; i++) {
+        var height =
+            window.innerHeight ||
+            document.documentElement.clientHeight ||
+            720;
 
-            var screen = get(screens[i]);
+        canvas.width = W;
+        canvas.height = H;
 
-            if (!screen) {
-                continue;
-            }
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
 
-            if (screens[i] === screenId) {
-                screen.classList.remove("hidden");
-            } else {
-                screen.classList.add("hidden");
-            }
-        }
+        canvas.style.display = "block";
+        canvas.style.touchAction = "none";
+
+        document.body.style.margin = "0";
+        document.body.style.padding = "0";
+        document.body.style.overflow = "hidden";
+        document.body.style.background = "#071b10";
     }
+
+    window.addEventListener(
+        "resize",
+        resizeCanvas
+    );
+
+    resizeCanvas();
 
 
     /* =========================================================
        GAME STATE
        ========================================================= */
 
+    var gameState = "menu";
+
+    var scoreHome = 0;
+    var scoreAway = 0;
+
+    var matchTime = 90;
+    var matchTimer = 0;
+
+    var lastTime = performance.now();
+
     var gameRunning = false;
 
-    var trainingMode = false;
-
-    var multiplayerMode = false;
-
-    var hostMode = false;
-
-    var matchStarted = false;
-
-    var animationFrame = null;
-
-
-    var scoreBlue = 0;
-
-    var scoreRed = 0;
-
-
-    var fieldWidth = 0;
-
-    var fieldHeight = 0;
+    var winnerMessage = "";
 
 
     /* =========================================================
-       PLAYER OBJECTS
+       FIELD
        ========================================================= */
 
-    var player1 = {
-        x: 22,
-        y: 50,
-        speed: 0.45,
-        radius: 4,
-        color: "blue"
-    };
-
-
-    var player2 = {
-        x: 78,
-        y: 50,
-        speed: 0.45,
-        radius: 4,
-        color: "red"
-    };
-
-
-    var ball = {
-        x: 50,
-        y: 50,
-        vx: 0,
-        vy: 0,
-        radius: 2.2,
-        friction: 0.96
+    var field = {
+        x: 90,
+        y: 85,
+        width: 1100,
+        height: 550
     };
 
 
     /* =========================================================
-       INPUT STATE
+       BALL
+       ========================================================= */
+
+    var ball = {
+        x: 640,
+        y: 360,
+        radius: 13,
+        vx: 0,
+        vy: 0,
+        owner: null,
+        lastTouch: "home"
+    };
+
+
+    /* =========================================================
+       PLAYER FACTORY
+       ========================================================= */
+
+    function createPlayer(
+        x,
+        y,
+        team,
+        number,
+        name,
+        controlled
+    ) {
+
+        return {
+
+            x: x,
+            y: y,
+
+            homeX: x,
+            homeY: y,
+
+            vx: 0,
+            vy: 0,
+
+            radius: 21,
+
+            team: team,
+
+            number: number,
+
+            name: name,
+
+            controlled: controlled,
+
+            speed: 230,
+
+            kickCooldown: 0,
+
+            stamina: 100
+        };
+    }
+
+
+    /* =========================================================
+       TEAMS
+       ========================================================= */
+
+    var homeTeam = [
+
+        createPlayer(
+            165,
+            360,
+            "home",
+            1,
+            "GK",
+            false
+        ),
+
+        createPlayer(
+            300,
+            210,
+            "home",
+            2,
+            "DEF",
+            false
+        ),
+
+        createPlayer(
+            300,
+            510,
+            "home",
+            3,
+            "DEF",
+            false
+        ),
+
+        createPlayer(
+            465,
+            280,
+            "home",
+            6,
+            "MID",
+            false
+        ),
+
+        createPlayer(
+            465,
+            440,
+            "home",
+            8,
+            "MID",
+            false
+        ),
+
+        createPlayer(
+            620,
+            360,
+            "home",
+            10,
+            "ST",
+            true
+        )
+    ];
+
+
+    var awayTeam = [
+
+        createPlayer(
+            1115,
+            360,
+            "away",
+            1,
+            "GK",
+            false
+        ),
+
+        createPlayer(
+            980,
+            210,
+            "away",
+            2,
+            "DEF",
+            false
+        ),
+
+        createPlayer(
+            980,
+            510,
+            "away",
+            3,
+            "DEF",
+            false
+        ),
+
+        createPlayer(
+            815,
+            280,
+            "away",
+            6,
+            "MID",
+            false
+        ),
+
+        createPlayer(
+            815,
+            440,
+            "away",
+            8,
+            "MID",
+            false
+        ),
+
+        createPlayer(
+            660,
+            360,
+            "away",
+            9,
+            "ST",
+            false
+        )
+    ];
+
+
+    var allPlayers =
+        homeTeam.concat(
+            awayTeam
+        );
+
+
+    /* =========================================================
+       CONTROLLED PLAYER
+       ========================================================= */
+
+    var controlledPlayer =
+        homeTeam[5];
+
+
+    /* =========================================================
+       INPUT
        ========================================================= */
 
     var keys = {};
 
-    var touchControls = {
-        p1up: false,
-        p1down: false,
-        p1left: false,
-        p1right: false,
+    var joystick = {
+        active: false,
+        x: 0,
+        y: 0,
+        centerX: 115,
+        centerY: 600,
+        radius: 70
+    };
 
-        p2up: false,
-        p2down: false,
-        p2left: false,
-        p2right: false
+    var actionButtons = {
+        shoot: {
+            x: 1120,
+            y: 545,
+            radius: 55
+        },
+
+        pass: {
+            x: 1015,
+            y: 620,
+            radius: 43
+        },
+
+        sprint: {
+            x: 1150,
+            y: 650,
+            radius: 40
+        }
     };
 
 
-    /* =========================================================
-       SCORE
-       ========================================================= */
+    window.addEventListener(
+        "keydown",
+        function (event) {
 
-    function updateScore() {
+            keys[event.key.toLowerCase()] =
+                true;
 
-        var score = get("score");
+            if (
+                event.key === " "
+            ) {
 
-        if (!score) {
-            return;
+                event.preventDefault();
+
+                kickBall(1.0);
+            }
+
+            if (
+                event.key.toLowerCase() === "p"
+            ) {
+
+                passBall();
+            }
+
+            if (
+                event.key.toLowerCase() === "r"
+            ) {
+
+                resetBall();
+            }
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                togglePause();
+            }
         }
-
-        score.textContent =
-            scoreBlue + " - " + scoreRed;
-    }
+    );
 
 
-    /* =========================================================
-       MESSAGE
-       ========================================================= */
+    window.addEventListener(
+        "keyup",
+        function (event) {
 
-    var messageTimer = null;
-
-
-    function showMessage(text, duration) {
-
-        var message = get("game-message");
-
-        if (!message) {
-            return;
+            keys[event.key.toLowerCase()] =
+                false;
         }
-
-        message.textContent = text;
-
-        message.classList.remove("hidden");
-
-
-        if (messageTimer) {
-            clearTimeout(messageTimer);
-        }
-
-
-        messageTimer = setTimeout(
-            function () {
-
-                message.classList.add("hidden");
-
-            },
-            duration || 1800
-        );
-    }
+    );
 
 
     /* =========================================================
-       FIELD SIZE
+       TOUCH HELPERS
        ========================================================= */
 
-    function updateFieldSize() {
-
-        var field = get("field");
-
-        if (!field) {
-            return;
-        }
-
-        fieldWidth = field.clientWidth;
-
-        fieldHeight = field.clientHeight;
-    }
-
-
-    /* =========================================================
-       POSITION PLAYER
-       ========================================================= */
-
-    function drawPlayer(elementId, player) {
-
-        var element = get(elementId);
-
-        if (!element) {
-            return;
-        }
-
-        element.style.left =
-            player.x + "%";
-
-        element.style.top =
-            player.y + "%";
-
-        element.style.transform =
-            "translate(-50%, -50%)";
-    }
-
-
-    /* =========================================================
-       POSITION BALL
-       ========================================================= */
-
-    function drawBall() {
-
-        var element = get("ball");
-
-        if (!element) {
-            return;
-        }
-
-        element.style.left =
-            ball.x + "%";
-
-        element.style.top =
-            ball.y + "%";
-
-        element.style.transform =
-            "translate(-50%, -50%)";
-    }
-
-
-    /* =========================================================
-       DRAW EVERYTHING
-       ========================================================= */
-
-    function drawGame() {
-
-        drawPlayer(
-            "player1",
-            player1
-        );
-
-        drawPlayer(
-            "player2",
-            player2
-        );
-
-        drawBall();
-    }
-
-
-    /* =========================================================
-       CLAMP PLAYER
-       ========================================================= */
-
-    function clampPlayer(player) {
-
-        if (player.x < 4) {
-            player.x = 4;
-        }
-
-        if (player.x > 96) {
-            player.x = 96;
-        }
-
-        if (player.y < 6) {
-            player.y = 6;
-        }
-
-        if (player.y > 94) {
-            player.y = 94;
-        }
-    }
-
-
-    /* =========================================================
-       MOVE PLAYER
-       ========================================================= */
-
-    function movePlayer(
-        player,
-        up,
-        down,
-        left,
-        right
+    function canvasPosition(
+        event
     ) {
 
-        if (up) {
-            player.y -= player.speed;
-        }
+        var rect =
+            canvas.getBoundingClientRect();
 
-        if (down) {
-            player.y += player.speed;
-        }
+        var clientX =
+            event.clientX;
 
-        if (left) {
-            player.x -= player.speed;
-        }
+        var clientY =
+            event.clientY;
 
-        if (right) {
-            player.x += player.speed;
-        }
+        return {
 
-        clampPlayer(player);
+            x:
+                (clientX - rect.left) *
+                (W / rect.width),
+
+            y:
+                (clientY - rect.top) *
+                (H / rect.height)
+        };
     }
 
 
-    /* =========================================================
-       DISTANCE
-       ========================================================= */
+    function distance(
+        x1,
+        y1,
+        x2,
+        y2
+    ) {
 
-    function distance(a, b) {
-
-        var dx =
-            a.x - b.x;
-
-        var dy =
-            a.y - b.y;
+        var dx = x2 - x1;
+        var dy = y2 - y1;
 
         return Math.sqrt(
             dx * dx +
@@ -356,47 +420,240 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    /* =========================================================
-       PLAYER-BALL CONTACT
-       ========================================================= */
+    canvas.addEventListener(
+        "pointerdown",
+        function (event) {
 
-    function playerTouchesBall(player) {
+            event.preventDefault();
 
-        return (
+            var p =
+                canvasPosition(event);
+
+            handlePointerDown(
+                p.x,
+                p.y
+            );
+        }
+    );
+
+
+    canvas.addEventListener(
+        "pointermove",
+        function (event) {
+
+            if (!joystick.active) {
+                return;
+            }
+
+            event.preventDefault();
+
+            var p =
+                canvasPosition(event);
+
+            updateJoystick(
+                p.x,
+                p.y
+            );
+        }
+    );
+
+
+    canvas.addEventListener(
+        "pointerup",
+        function (event) {
+
+            event.preventDefault();
+
+            joystick.active = false;
+
+            joystick.x = 0;
+            joystick.y = 0;
+        }
+    );
+
+
+    canvas.addEventListener(
+        "pointercancel",
+        function () {
+
+            joystick.active = false;
+
+            joystick.x = 0;
+            joystick.y = 0;
+        }
+    );
+
+
+    function handlePointerDown(
+        x,
+        y
+    ) {
+
+        /* MENU */
+
+        if (
+            gameState === "menu"
+        ) {
+
+            if (
+                x > 480 &&
+                x < 800 &&
+                y > 390 &&
+                y < 475
+            ) {
+
+                startGame();
+
+                return;
+            }
+
+            return;
+        }
+
+
+        /* PAUSE */
+
+        if (
+            gameState === "pause"
+        ) {
+
+            if (
+                x > 480 &&
+                x < 800 &&
+                y > 390 &&
+                y < 475
+            ) {
+
+                gameState =
+                    "playing";
+
+                return;
+            }
+
+            return;
+        }
+
+
+        /* GAME OVER */
+
+        if (
+            gameState === "gameover"
+        ) {
+
+            if (
+                x > 480 &&
+                x < 800 &&
+                y > 390 &&
+                y < 475
+            ) {
+
+                resetMatch();
+
+                return;
+            }
+
+            return;
+        }
+
+
+        /* JOYSTICK */
+
+        if (
             distance(
-                player,
-                ball
-            ) <
-            player.radius +
-            ball.radius +
-            1
-        );
-    }
+                x,
+                y,
+                joystick.centerX,
+                joystick.centerY
+            ) <= joystick.radius * 1.5
+        ) {
 
+            joystick.active = true;
 
-    /* =========================================================
-       KICK BALL
-       ========================================================= */
-
-    function kickBall(player, power) {
-
-        if (!playerTouchesBall(player)) {
-
-            showMessage(
-                "Move closer to the ball",
-                700
+            updateJoystick(
+                x,
+                y
             );
 
             return;
         }
 
 
+        /* SHOOT */
+
+        if (
+            distance(
+                x,
+                y,
+                actionButtons.shoot.x,
+                actionButtons.shoot.y
+            ) <=
+            actionButtons.shoot.radius
+        ) {
+
+            kickBall(1.0);
+
+            return;
+        }
+
+
+        /* PASS */
+
+        if (
+            distance(
+                x,
+                y,
+                actionButtons.pass.x,
+                actionButtons.pass.y
+            ) <=
+            actionButtons.pass.radius
+        ) {
+
+            passBall();
+
+            return;
+        }
+
+
+        /* SPRINT */
+
+        if (
+            distance(
+                x,
+                y,
+                actionButtons.sprint.x,
+                actionButtons.sprint.y
+            ) <=
+            actionButtons.sprint.radius
+        ) {
+
+            keys["shift"] = true;
+
+            setTimeout(
+                function () {
+
+                    keys["shift"] = false;
+
+                },
+                500
+            );
+
+            return;
+        }
+    }
+
+
+    function updateJoystick(
+        x,
+        y
+    ) {
+
         var dx =
-            ball.x - player.x;
+            x -
+            joystick.centerX;
 
         var dy =
-            ball.y - player.y;
-
+            y -
+            joystick.centerY;
 
         var length =
             Math.sqrt(
@@ -404,318 +661,92 @@ document.addEventListener("DOMContentLoaded", function () {
                 dy * dy
             );
 
+        if (
+            length >
+            joystick.radius
+        ) {
 
-        if (length === 0) {
+            dx =
+                dx /
+                length *
+                joystick.radius;
 
-            if (player.color === "blue") {
-                dx = 1;
-            } else {
-                dx = -1;
-            }
-
-            dy = 0;
-
-            length = 1;
+            dy =
+                dy /
+                length *
+                joystick.radius;
         }
 
+        joystick.x =
+            dx /
+            joystick.radius;
 
-        dx /= length;
-        dy /= length;
-
-
-        ball.vx =
-            dx * power;
-
-        ball.vy =
-            dy * power;
+        joystick.y =
+            dy /
+            joystick.radius;
     }
 
 
     /* =========================================================
-       PASS
+       BUTTON CLICK
        ========================================================= */
 
-    function passBall(player) {
+    function createButton(
+        text,
+        x,
+        y,
+        width,
+        height,
+        callback
+    ) {
 
-        kickBall(
-            player,
-            1.6
-        );
-    }
-
-
-    /* =========================================================
-       SHOOT
-       ========================================================= */
-
-    function shootBall(player) {
-
-        if (!playerTouchesBall(player)) {
-
-            showMessage(
-                "Move closer to the ball",
-                700
+        var button =
+            document.createElement(
+                "button"
             );
 
-            return;
-        }
+        button.textContent =
+            text;
 
+        button.style.position =
+            "fixed";
 
-        var targetX;
+        button.style.left =
+            "50%";
 
+        button.style.top =
+            "50%";
 
-        if (player.color === "blue") {
+        button.style.transform =
+            "translate(-50%, -50%)";
 
-            targetX = 100;
+        button.style.width =
+            width + "px";
 
-        } else {
+        button.style.height =
+            height + "px";
 
-            targetX = 0;
-        }
+        button.style.zIndex =
+            "9999";
 
+        button.style.display =
+            "none";
 
-        var dx =
-            targetX - ball.x;
+        button.addEventListener(
+            "click",
+            function (event) {
 
-        var dy =
-            50 - ball.y;
+                event.preventDefault();
 
-
-        var length =
-            Math.sqrt(
-                dx * dx +
-                dy * dy
-            );
-
-
-        if (length === 0) {
-            length = 1;
-        }
-
-
-        ball.vx =
-            (dx / length) * 3.2;
-
-        ball.vy =
-            (dy / length) * 3.2;
-    }
-
-
-    /* =========================================================
-       BALL PHYSICS
-       ========================================================= */
-
-    function updateBall() {
-
-        ball.x += ball.vx;
-
-        ball.y += ball.vy;
-
-
-        ball.vx *= ball.friction;
-
-        ball.vy *= ball.friction;
-
-
-        /*
-         * Top / bottom wall
-         */
-
-        if (ball.y < 3) {
-
-            ball.y = 3;
-
-            ball.vy =
-                Math.abs(
-                    ball.vy
-                ) * 0.75;
-        }
-
-
-        if (ball.y > 97) {
-
-            ball.y = 97;
-
-            ball.vy =
-                -Math.abs(
-                    ball.vy
-                ) * 0.75;
-        }
-
-
-        /*
-         * Left / right field
-         */
-
-        if (ball.x < 1) {
-
-            /*
-             * Goal area
-             */
-
-            if (
-                ball.y > 35 &&
-                ball.y < 65
-            ) {
-
-                scoreBlue++;
-
-                goalScored(
-                    "BLUE"
-                );
-
-                return;
+                callback();
             }
-
-
-            ball.x = 1;
-
-            ball.vx =
-                Math.abs(
-                    ball.vx
-                ) * 0.75;
-        }
-
-
-        if (ball.x > 99) {
-
-            /*
-             * Goal area
-             */
-
-            if (
-                ball.y > 35 &&
-                ball.y < 65
-            ) {
-
-                scoreRed++;
-
-                goalScored(
-                    "RED"
-                );
-
-                return;
-            }
-
-
-            ball.x = 99;
-
-            ball.vx =
-                -Math.abs(
-                    ball.vx
-                ) * 0.75;
-        }
-    }
-
-
-    /* =========================================================
-       GOAL
-       ========================================================= */
-
-    function goalScored(team) {
-
-        updateScore();
-
-        showMessage(
-            team + " GOAL!",
-            1600
         );
 
-
-        /*
-         * Reset ball
-         */
-
-        ball.x = 50;
-
-        ball.y = 50;
-
-        ball.vx = 0;
-
-        ball.vy = 0;
-
-
-        /*
-         * Reset players
-         */
-
-        player1.x = 22;
-        player1.y = 50;
-
-        player2.x = 78;
-        player2.y = 50;
-    }
-
-
-    /* =========================================================
-       GAME LOOP
-       ========================================================= */
-
-    function gameLoop() {
-
-        if (!gameRunning) {
-            return;
-        }
-
-
-        updateFieldSize();
-
-
-        /*
-         * PLAYER 1
-         */
-
-        movePlayer(
-            player1,
-
-            keys["w"] ||
-            keys["ArrowUp"] ||
-            touchControls.p1up,
-
-            keys["s"] ||
-            keys["ArrowDown"] ||
-            touchControls.p1down,
-
-            keys["a"] ||
-            keys["ArrowLeft"] ||
-            touchControls.p1left,
-
-            keys["d"] ||
-            keys["ArrowRight"] ||
-            touchControls.p1right
+        document.body.appendChild(
+            button
         );
 
-
-        /*
-         * PLAYER 2
-         */
-
-        movePlayer(
-            player2,
-
-            keys["i"] ||
-            touchControls.p2up,
-
-            keys["k"] ||
-            touchControls.p2down,
-
-            keys["j"] ||
-            touchControls.p2left,
-
-            keys["l"] ||
-            touchControls.p2right
-        );
-
-
-        updateBall();
-
-        drawGame();
-
-
-        animationFrame =
-            requestAnimationFrame(
-                gameLoop
-            );
+        return button;
     }
 
 
@@ -725,1022 +756,2500 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function startGame() {
 
-        gameRunning = true;
+        resetMatch();
 
-        matchStarted = true;
+        gameState =
+            "playing";
 
-
-        scoreBlue = 0;
-
-        scoreRed = 0;
-
-
-        player1.x = 22;
-        player1.y = 50;
-
-        player2.x = 78;
-        player2.y = 50;
+        gameRunning =
+            true;
+    }
 
 
-        ball.x = 50;
-        ball.y = 50;
+    function resetMatch() {
+
+        scoreHome = 0;
+        scoreAway = 0;
+
+        matchTimer = 0;
+
+        winnerMessage = "";
+
+        resetPlayers();
+
+        resetBall();
+
+        gameState =
+            "playing";
+
+        gameRunning =
+            true;
+    }
+
+
+    function resetPlayers() {
+
+        for (
+            var i = 0;
+            i < allPlayers.length;
+            i++
+        ) {
+
+            var p =
+                allPlayers[i];
+
+            p.x =
+                p.homeX;
+
+            p.y =
+                p.homeY;
+
+            p.vx = 0;
+            p.vy = 0;
+
+            p.kickCooldown = 0;
+        }
+    }
+
+
+    function resetBall() {
+
+        ball.x = 640;
+        ball.y = 360;
 
         ball.vx = 0;
         ball.vy = 0;
 
-
-        updateScore();
-
-        showScreen(
-            "screen-game"
-        );
-
-
-        drawGame();
-
-
-        if (animationFrame) {
-
-            cancelAnimationFrame(
-                animationFrame
-            );
-        }
-
-
-        animationFrame =
-            requestAnimationFrame(
-                gameLoop
-            );
+        ball.owner = null;
     }
 
 
-    /* =========================================================
-       STOP GAME
-       ========================================================= */
+    function togglePause() {
 
-    function stopGame() {
+        if (
+            gameState === "playing"
+        ) {
 
-        gameRunning = false;
+            gameState =
+                "pause";
 
-        matchStarted = false;
+        } else if (
+            gameState === "pause"
+        ) {
 
-
-        if (animationFrame) {
-
-            cancelAnimationFrame(
-                animationFrame
-            );
-
-            animationFrame = null;
+            gameState =
+                "playing";
         }
     }
 
 
     /* =========================================================
-       MAIN MENU
+       PLAYER MOVEMENT
        ========================================================= */
 
-    var localButton =
-        get("btn-local");
-
-
-    if (localButton) {
-
-        localButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                multiplayerMode = true;
-
-                trainingMode = false;
-
-                showScreen(
-                    "screen-mode"
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       TRAINING BUTTON
-       ========================================================= */
-
-    var trainingButton =
-        get("btn-training");
-
-
-    if (trainingButton) {
-
-        trainingButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                multiplayerMode = false;
-
-                trainingMode = true;
-
-                showScreen(
-                    "screen-training"
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       SETTINGS BUTTON
-       ========================================================= */
-
-    var settingsButton =
-        get("btn-settings");
-
-
-    if (settingsButton) {
-
-        settingsButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                showScreen(
-                    "screen-settings"
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       HOST
-       ========================================================= */
-
-    var hostButton =
-        get("btn-host");
-
-
-    if (hostButton) {
-
-        hostButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                hostMode = true;
-
-                multiplayerMode = true;
-
-                showScreen(
-                    "screen-lobby"
-                );
-
-
-                var title =
-                    get("lobby-title");
-
-                var status =
-                    get("connection-status");
-
-                var room =
-                    get("room-code");
-
-
-                if (title) {
-                    title.textContent =
-                        "PLAYER 1 - HOST";
-                }
-
-
-                if (status) {
-
-                    status.textContent =
-                        "Waiting for Player 2...";
-                }
-
-
-                if (room) {
-
-                    room.textContent =
-                        "ROOM: LOCAL-01";
-                }
-            }
-        );
-    }
-
-
-    /* =========================================================
-       JOIN
-       ========================================================= */
-
-    var joinButton =
-        get("btn-join");
-
-
-    if (joinButton) {
-
-        joinButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                hostMode = false;
-
-                multiplayerMode = true;
-
-                showScreen(
-                    "screen-lobby"
-                );
-
-
-                var title =
-                    get("lobby-title");
-
-                var status =
-                    get("connection-status");
-
-                var room =
-                    get("room-code");
-
-
-                if (title) {
-
-                    title.textContent =
-                        "PLAYER 2 - JOIN";
-                }
-
-
-                if (status) {
-
-                    status.textContent =
-                        "Ready for local connection.";
-                }
-
-
-                if (room) {
-
-                    room.textContent =
-                        "ROOM: LOCAL-01";
-                }
-            }
-        );
-    }
-
-
-    /* =========================================================
-       START MATCH
-       ========================================================= */
-
-    var startMatchButton =
-        get("btn-start-match");
-
-
-    if (startMatchButton) {
-
-        startMatchButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                startGame();
-            }
-        );
-    }
-
-
-    /* =========================================================
-       MODE BACK
-       ========================================================= */
-
-    var modeBack =
-        get("btn-mode-back");
-
-
-    if (modeBack) {
-
-        modeBack.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                showScreen(
-                    "screen-menu"
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       LOBBY BACK
-       ========================================================= */
-
-    var lobbyBack =
-        get("btn-lobby-back");
-
-
-    if (lobbyBack) {
-
-        lobbyBack.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                showScreen(
-                    "screen-mode"
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       TRAINING START
-       ========================================================= */
-
-    var trainingStart =
-        get("btn-training-start");
-
-
-    if (trainingStart) {
-
-        trainingStart.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                trainingMode = true;
-
-                multiplayerMode = false;
-
-                startGame();
-
-                showMessage(
-                    "TRAINING STARTED",
-                    1200
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       TRAINING BACK
-       ========================================================= */
-
-    var trainingBack =
-        get("btn-training-back");
-
-
-    if (trainingBack) {
-
-        trainingBack.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                showScreen(
-                    "screen-menu"
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       SETTINGS BACK
-       ========================================================= */
-
-    var settingsBack =
-        get("btn-settings-back");
-
-
-    if (settingsBack) {
-
-        settingsBack.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                showScreen(
-                    "screen-menu"
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       FULLSCREEN
-       ========================================================= */
-
-    var fullscreenButton =
-        get("btn-fullscreen");
-
-
-    function enterFullscreen() {
-
-        var element =
-            document.documentElement;
-
-
-        try {
-
-            if (
-                element.requestFullscreen
-            ) {
-
-                element.requestFullscreen();
-
-                return true;
-            }
-
-
-            if (
-                element.webkitRequestFullscreen
-            ) {
-
-                element.webkitRequestFullscreen();
-
-                return true;
-            }
-
-        } catch (e) {
-        }
-
-
-        /*
-         * Android bridge can handle this later.
-         */
-
-        try {
-
-            if (
-                window.VaultAndroid &&
-                window.VaultAndroid
-                    .setLandscape
-            ) {
-
-                window.VaultAndroid
-                    .setLandscape();
-
-            }
-
-        } catch (e) {
-        }
-
-
-        return false;
-    }
-
-
-    if (fullscreenButton) {
-
-        fullscreenButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                enterFullscreen();
-
-                showMessage(
-                    "FULLSCREEN",
-                    900
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       GAME MENU
-       ========================================================= */
-
-    var gameMenu =
-        get("btn-game-menu");
-
-
-    if (gameMenu) {
-
-        gameMenu.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                stopGame();
-
-                showScreen(
-                    "screen-menu"
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       KEYBOARD INPUT
-       ========================================================= */
-
-    document.addEventListener(
-        "keydown",
-        function (event) {
-
-            var key =
-                event.key;
-
-
-            keys[key] = true;
-
-
-            /*
-             * Prevent browser scrolling
-             * during football controls.
-             */
-
-            if (
-                key === "ArrowUp" ||
-                key === "ArrowDown" ||
-                key === "ArrowLeft" ||
-                key === "ArrowRight" ||
-                key === " "
-            ) {
-
-                event.preventDefault();
-            }
-
-
-            /*
-             * Player 1 actions
-             */
-
-            if (
-                key === " "
-            ) {
-
-                shootBall(
-                    player1
-                );
-            }
-
-
-            if (
-                key === "e" ||
-                key === "E"
-            ) {
-
-                passBall(
-                    player1
-                );
-            }
-
-
-            /*
-             * Player 2 actions
-             */
-
-            if (
-                key === "Enter"
-            ) {
-
-                shootBall(
-                    player2
-                );
-            }
-
-
-            if (
-                key === "o" ||
-                key === "O"
-            ) {
-
-                passBall(
-                    player2
-                );
-            }
-        }
-    );
-
-
-    document.addEventListener(
-        "keyup",
-        function (event) {
-
-            keys[event.key] = false;
-        }
-    );
-
-
-    /* =========================================================
-       TOUCH BUTTON HELPER
-       ========================================================= */
-
-    function setupHoldButton(
-        id,
-        stateName
+    function updateControlledPlayer(
+        dt
     ) {
 
-        var button =
-            get(id);
+        var dx = 0;
+        var dy = 0;
 
 
-        if (!button) {
+        if (keys["arrowleft"] ||
+            keys["a"]) {
+
+            dx -= 1;
+        }
+
+        if (keys["arrowright"] ||
+            keys["d"]) {
+
+            dx += 1;
+        }
+
+        if (keys["arrowup"] ||
+            keys["w"]) {
+
+            dy -= 1;
+        }
+
+        if (keys["arrowdown"] ||
+            keys["s"]) {
+
+            dy += 1;
+        }
+
+
+        if (joystick.active) {
+
+            dx =
+                joystick.x;
+
+            dy =
+                joystick.y;
+        }
+
+
+        var length =
+            Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+
+        if (length > 1) {
+
+            dx /= length;
+            dy /= length;
+        }
+
+
+        var speed =
+            controlledPlayer.speed;
+
+
+        if (keys["shift"]) {
+
+            speed *= 1.55;
+        }
+
+
+        controlledPlayer.vx =
+            dx * speed;
+
+        controlledPlayer.vy =
+            dy * speed;
+
+
+        controlledPlayer.x +=
+            controlledPlayer.vx *
+            dt;
+
+        controlledPlayer.y +=
+            controlledPlayer.vy *
+            dt;
+
+
+        keepPlayerInsideField(
+            controlledPlayer
+        );
+
+
+        if (
+            controlledPlayer.kickCooldown >
+            0
+        ) {
+
+            controlledPlayer.kickCooldown -=
+                dt;
+        }
+    }
+
+
+    function updateAI(
+        player,
+        dt
+    ) {
+
+        if (
+            player.controlled
+        ) {
             return;
         }
 
 
-        function start(event) {
+        var targetX =
+            player.homeX;
 
-            event.preventDefault();
+        var targetY =
+            player.homeY;
 
-            touchControls[stateName] =
-                true;
+
+        var ballDistance =
+            distance(
+                player.x,
+                player.y,
+                ball.x,
+                ball.y
+            );
+
+
+        if (
+            ballDistance < 230
+        ) {
+
+            targetX =
+                ball.x;
+
+            targetY =
+                ball.y;
         }
 
 
-        function end(event) {
+        if (
+            player.team === "away"
+        ) {
 
-            event.preventDefault();
-
-            touchControls[stateName] =
-                false;
+            targetX -= 30;
         }
 
 
-        button.addEventListener(
-            "touchstart",
-            start,
-            {
-                passive: false
-            }
-        );
+        var dx =
+            targetX -
+            player.x;
+
+        var dy =
+            targetY -
+            player.y;
 
 
-        button.addEventListener(
-            "touchend",
-            end,
-            {
-                passive: false
-            }
-        );
+        var length =
+            Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
 
 
-        button.addEventListener(
-            "touchcancel",
-            end,
-            {
-                passive: false
-            }
-        );
+        if (
+            length > 5
+        ) {
 
+            dx /= length;
+            dy /= length;
 
-        /*
-         * Mouse support for testing.
-         */
+            player.vx =
+                dx *
+                player.speed *
+                0.55;
 
-        button.addEventListener(
-            "mousedown",
-            start
-        );
+            player.vy =
+                dy *
+                player.speed *
+                0.55;
 
+        } else {
 
-        button.addEventListener(
-            "mouseup",
-            end
-        );
-
-
-        button.addEventListener(
-            "mouseleave",
-            end
-        );
-    }
-
-
-    /* =========================================================
-       PLAYER 1 MOVEMENT
-       ========================================================= */
-
-    setupHoldButton(
-        "control-up",
-        "p1up"
-    );
-
-    setupHoldButton(
-        "control-down",
-        "p1down"
-    );
-
-    setupHoldButton(
-        "control-left",
-        "p1left"
-    );
-
-    setupHoldButton(
-        "control-right",
-        "p1right"
-    );
-
-
-    /* =========================================================
-       PLAYER 2 MOVEMENT
-       ========================================================= */
-
-    setupHoldButton(
-        "p2-up",
-        "p2up"
-    );
-
-    setupHoldButton(
-        "p2-down",
-        "p2down"
-    );
-
-    setupHoldButton(
-        "p2-left",
-        "p2left"
-    );
-
-    setupHoldButton(
-        "p2-right",
-        "p2right"
-    );
-
-
-    /* =========================================================
-       PLAYER 1 ACTION BUTTONS
-       ========================================================= */
-
-    var pass1 =
-        get("control-pass");
-
-
-    if (pass1) {
-
-        pass1.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                passBall(
-                    player1
-                );
-            }
-        );
-    }
-
-
-    var shoot1 =
-        get("control-shoot");
-
-
-    if (shoot1) {
-
-        shoot1.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                shootBall(
-                    player1
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       PLAYER 2 ACTION BUTTONS
-       ========================================================= */
-
-    var pass2 =
-        get("p2-pass");
-
-
-    if (pass2) {
-
-        pass2.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                passBall(
-                    player2
-                );
-            }
-        );
-    }
-
-
-    var shoot2 =
-        get("p2-shoot");
-
-
-    if (shoot2) {
-
-        shoot2.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                shootBall(
-                    player2
-                );
-            }
-        );
-    }
-
-
-    /* =========================================================
-       PREVENT LONG-PRESS MENU
-       ========================================================= */
-
-    document.addEventListener(
-        "contextmenu",
-        function (event) {
-
-            event.preventDefault();
-
+            player.vx = 0;
+            player.vy = 0;
         }
-    );
 
 
-    /* =========================================================
-       ANDROID BACK BUTTON
-       ========================================================= */
+        player.x +=
+            player.vx *
+            dt;
 
-    window.handleAndroidBack =
-        function () {
-
-            var current =
-                "screen-menu";
+        player.y +=
+            player.vy *
+            dt;
 
 
-            for (
-                var i = 0;
-                i < screens.length;
-                i++
+        keepPlayerInsideField(
+            player
+        );
+
+
+        if (
+            player.kickCooldown >
+            0
+        ) {
+
+            player.kickCooldown -=
+                dt;
+        }
+
+
+        /* AI kick */
+
+        if (
+            ballDistance <
+            player.radius +
+            ball.radius +
+            10
+        ) {
+
+            if (
+                player.team === "away"
             ) {
 
-                var screen =
-                    get(screens[i]);
+                var goalX =
+                    field.x;
 
+                var goalY =
+                    field.y +
+                    field.height / 2;
+
+                shootTowards(
+                    player,
+                    goalX,
+                    goalY,
+                    330
+                );
+            }
+        }
+    }
+
+
+    function keepPlayerInsideField(
+        player
+    ) {
+
+        var minX =
+            field.x +
+            player.radius;
+
+        var maxX =
+            field.x +
+            field.width -
+            player.radius;
+
+        var minY =
+            field.y +
+            player.radius;
+
+        var maxY =
+            field.y +
+            field.height -
+            player.radius;
+
+
+        if (
+            player.x <
+            minX
+        ) {
+
+            player.x =
+                minX;
+        }
+
+        if (
+            player.x >
+            maxX
+        ) {
+
+            player.x =
+                maxX;
+        }
+
+        if (
+            player.y <
+            minY
+        ) {
+
+            player.y =
+                minY;
+        }
+
+        if (
+            player.y >
+            maxY
+        ) {
+
+            player.y =
+                maxY;
+        }
+    }
+
+
+    /* =========================================================
+       BALL PHYSICS
+       ========================================================= */
+
+    function updateBall(
+        dt
+    ) {
+
+        ball.x +=
+            ball.vx *
+            dt;
+
+        ball.y +=
+            ball.vy *
+            dt;
+
+
+        var friction =
+            Math.pow(
+                0.025,
+                dt
+            );
+
+        ball.vx *=
+            friction;
+
+        ball.vy *=
+            friction;
+
+
+        if (
+            Math.abs(ball.vx) <
+            1
+        ) {
+
+            ball.vx = 0;
+        }
+
+        if (
+            Math.abs(ball.vy) <
+            1
+        ) {
+
+            ball.vy = 0;
+        }
+
+
+        /* TOP / BOTTOM */
+
+        var top =
+            field.y +
+            ball.radius;
+
+        var bottom =
+            field.y +
+            field.height -
+            ball.radius;
+
+
+        if (
+            ball.y < top
+        ) {
+
+            ball.y = top;
+
+            ball.vy *= -0.65;
+        }
+
+
+        if (
+            ball.y > bottom
+        ) {
+
+            ball.y = bottom;
+
+            ball.vy *= -0.65;
+        }
+
+
+        /* GOALS */
+
+        var goalTop =
+            field.y +
+            field.height * 0.35;
+
+        var goalBottom =
+            field.y +
+            field.height * 0.65;
+
+
+        if (
+            ball.x <
+            field.x -
+            ball.radius
+        ) {
+
+            if (
+                ball.y > goalTop &&
+                ball.y < goalBottom
+            ) {
+
+                scoreAway++;
+
+                goalScored(
+                    "away"
+                );
+
+                return;
+            }
+
+            ball.x =
+                field.x +
+                ball.radius;
+
+            ball.vx *= -0.7;
+        }
+
+
+        if (
+            ball.x >
+            field.x +
+            field.width +
+            ball.radius
+        ) {
+
+            if (
+                ball.y > goalTop &&
+                ball.y < goalBottom
+            ) {
+
+                scoreHome++;
+
+                goalScored(
+                    "home"
+                );
+
+                return;
+            }
+
+            ball.x =
+                field.x +
+                field.width -
+                ball.radius;
+
+            ball.vx *= -0.7;
+        }
+    }
+
+
+    function goalScored(
+        team
+    ) {
+
+        winnerMessage =
+            team === "home"
+                ? "GOAL! HOME TEAM"
+                : "GOAL! AWAY TEAM";
+
+
+        resetPlayers();
+
+        resetBall();
+
+
+        setTimeout(
+            function () {
+
+                winnerMessage = "";
+
+            },
+            1200
+        );
+    }
+
+
+    /* =========================================================
+       PLAYER / BALL COLLISION
+       ========================================================= */
+
+    function updateBallCollisions() {
+
+        for (
+            var i = 0;
+            i < allPlayers.length;
+            i++
+        ) {
+
+            var player =
+                allPlayers[i];
+
+
+            var dx =
+                ball.x -
+                player.x;
+
+            var dy =
+                ball.y -
+                player.y;
+
+
+            var dist =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy
+                );
+
+
+            var minDist =
+                player.radius +
+                ball.radius;
+
+
+            if (
+                dist < minDist
+            ) {
 
                 if (
-                    screen &&
-                    !screen.classList.contains(
-                        "hidden"
-                    )
+                    dist === 0
                 ) {
 
-                    current =
-                        screens[i];
+                    dist = 0.01;
+                }
 
-                    break;
+
+                dx /= dist;
+                dy /= dist;
+
+
+                ball.x =
+                    player.x +
+                    dx *
+                    minDist;
+
+                ball.y =
+                    player.y +
+                    dy *
+                    minDist;
+
+
+                /* controlled player owns ball */
+
+                if (
+                    player.controlled
+                ) {
+
+                    ball.owner =
+                        player;
+
+                    ball.lastTouch =
+                        player.team;
+
+                } else {
+
+                    ball.owner =
+                        null;
+                }
+
+
+                /* AI touch */
+
+                if (
+                    player.team ===
+                    "away"
+                ) {
+
+                    var goalX =
+                        field.x;
+
+                    var goalY =
+                        field.y +
+                        field.height / 2;
+
+                    shootTowards(
+                        player,
+                        goalX,
+                        goalY,
+                        250
+                    );
                 }
             }
-
-
-            if (
-                current ===
-                "screen-game"
-            ) {
-
-                stopGame();
-
-                showScreen(
-                    "screen-menu"
-                );
-
-                return;
-            }
-
-
-            if (
-                current ===
-                "screen-lobby"
-            ) {
-
-                showScreen(
-                    "screen-mode"
-                );
-
-                return;
-            }
-
-
-            if (
-                current ===
-                "screen-mode"
-            ) {
-
-                showScreen(
-                    "screen-menu"
-                );
-
-                return;
-            }
-
-
-            if (
-                current ===
-                "screen-training"
-            ) {
-
-                showScreen(
-                    "screen-menu"
-                );
-
-                return;
-            }
-
-
-            if (
-                current ===
-                "screen-settings"
-            ) {
-
-                showScreen(
-                    "screen-menu"
-                );
-
-                return;
-            }
-
-
-            if (
-                current ===
-                "screen-menu"
-            ) {
-
-                /*
-                 * Let Android close the Activity.
-                 */
-
-                try {
-
-                    if (
-                        window.VaultAndroid &&
-                        window.VaultAndroid
-                            .finishApp
-                    ) {
-
-                        window.VaultAndroid
-                            .finishApp();
-
-                    }
-
-                } catch (e) {
-                }
-            }
-        };
+        }
+    }
 
 
     /* =========================================================
-       RESIZE
+       SHOOT
        ========================================================= */
+
+    function kickBall(
+        power
+    ) {
+
+        if (
+            gameState !==
+            "playing"
+        ) {
+
+            return;
+        }
+
+
+        var p =
+            controlledPlayer;
+
+
+        var dist =
+            distance(
+                p.x,
+                p.y,
+                ball.x,
+                ball.y
+            );
+
+
+        if (
+            dist >
+            p.radius +
+            ball.radius +
+            45
+        ) {
+
+            return;
+        }
+
+
+        if (
+            p.kickCooldown >
+            0
+        ) {
+
+            return;
+        }
+
+
+        var targetX =
+            field.x +
+            field.width;
+
+        var targetY =
+            field.y +
+            field.height / 2;
+
+
+        var dx =
+            targetX -
+            p.x;
+
+        var dy =
+            targetY -
+            p.y;
+
+
+        var length =
+            Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+
+        if (
+            length === 0
+        ) {
+
+            return;
+        }
+
+
+        dx /= length;
+        dy /= length;
+
+
+        ball.owner =
+            null;
+
+        ball.lastTouch =
+            "home";
+
+
+        ball.vx =
+            dx *
+            500 *
+            power;
+
+        ball.vy =
+            dy *
+            500 *
+            power;
+
+
+        p.kickCooldown =
+            0.35;
+    }
+
+
+    function shootTowards(
+        player,
+        targetX,
+        targetY,
+        speed
+    ) {
+
+        if (
+            player.kickCooldown >
+            0
+        ) {
+
+            return;
+        }
+
+
+        var dx =
+            targetX -
+            player.x;
+
+        var dy =
+            targetY -
+            player.y;
+
+
+        var length =
+            Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+
+        if (
+            length === 0
+        ) {
+
+            return;
+        }
+
+
+        dx /= length;
+        dy /= length;
+
+
+        ball.owner =
+            null;
+
+        ball.lastTouch =
+            player.team;
+
+
+        ball.vx =
+            dx *
+            speed;
+
+        ball.vy =
+            dy *
+            speed;
+
+
+        player.kickCooldown =
+            0.7;
+    }
+
+
+    /* =========================================================
+       PASS
+       ========================================================= */
+
+    function passBall() {
+
+        if (
+            gameState !==
+            "playing"
+        ) {
+
+            return;
+        }
+
+
+        var p =
+            controlledPlayer;
+
+
+        var closest =
+            null;
+
+        var closestDistance =
+            Infinity;
+
+
+        for (
+            var i = 0;
+            i < homeTeam.length;
+            i++
+        ) {
+
+            var teammate =
+                homeTeam[i];
+
+
+            if (
+                teammate ===
+                p
+            ) {
+
+                continue;
+            }
+
+
+            var d =
+                distance(
+                    p.x,
+                    p.y,
+                    teammate.x,
+                    teammate.y
+                );
+
+
+            if (
+                d <
+                closestDistance
+            ) {
+
+                closestDistance =
+                    d;
+
+                closest =
+                    teammate;
+            }
+        }
+
+
+        if (
+            !closest
+        ) {
+
+            return;
+        }
+
+
+        var ballDistance =
+            distance(
+                p.x,
+                p.y,
+                ball.x,
+                ball.y
+            );
+
+
+        if (
+            ballDistance >
+            90
+        ) {
+
+            return;
+        }
+
+
+        var dx =
+            closest.x -
+            p.x;
+
+        var dy =
+            closest.y -
+            p.y;
+
+
+        var length =
+            Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+
+        if (
+            length === 0
+        ) {
+
+            return;
+        }
+
+
+        dx /= length;
+        dy /= length;
+
+
+        ball.owner =
+            null;
+
+        ball.lastTouch =
+            "home";
+
+
+        ball.vx =
+            dx *
+            360;
+
+        ball.vy =
+            dy *
+            360;
+    }
+
+
+    /* =========================================================
+       MATCH TIMER
+       ========================================================= */
+
+    function updateMatchTimer(
+        dt
+    ) {
+
+        if (
+            gameState !==
+            "playing"
+        ) {
+
+            return;
+        }
+
+
+        matchTimer +=
+            dt;
+
+
+        if (
+            matchTimer >=
+            matchTime
+        ) {
+
+            matchTimer =
+                matchTime;
+
+            gameState =
+                "gameover";
+
+            gameRunning =
+                false;
+
+
+            if (
+                scoreHome >
+                scoreAway
+            ) {
+
+                winnerMessage =
+                    "HOME TEAM WINS";
+
+            } else if (
+                scoreAway >
+                scoreHome
+            ) {
+
+                winnerMessage =
+                    "AWAY TEAM WINS";
+
+            } else {
+
+                winnerMessage =
+                    "MATCH DRAW";
+            }
+        }
+    }
+
+
+    /* =========================================================
+       DRAW HELPERS
+       ========================================================= */
+
+    function roundRect(
+        x,
+        y,
+        width,
+        height,
+        radius
+    ) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x + radius,
+            y
+        );
+
+        ctx.lineTo(
+            x + width - radius,
+            y
+        );
+
+        ctx.quadraticCurveTo(
+            x + width,
+            y,
+            x + width,
+            y + radius
+        );
+
+        ctx.lineTo(
+            x + width,
+            y + height - radius
+        );
+
+        ctx.quadraticCurveTo(
+            x + width,
+            y + height,
+            x + width - radius,
+            y + height
+        );
+
+        ctx.lineTo(
+            x + radius,
+            y + height
+        );
+
+        ctx.quadraticCurveTo(
+            x,
+            y + height,
+            x,
+            y + height - radius
+        );
+
+        ctx.lineTo(
+            x,
+            y + radius
+        );
+
+        ctx.quadraticCurveTo(
+            x,
+            y,
+            x + radius,
+            y
+        );
+
+        ctx.closePath();
+    }
+
+
+    /* =========================================================
+       DRAW BACKGROUND
+       ========================================================= */
+
+    function drawBackground() {
+
+        ctx.fillStyle =
+            "#071b10";
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+
+
+        var gradient =
+            ctx.createLinearGradient(
+                0,
+                0,
+                0,
+                H
+            );
+
+        gradient.addColorStop(
+            0,
+            "#123f24"
+        );
+
+        gradient.addColorStop(
+            1,
+            "#06150d"
+        );
+
+
+        ctx.fillStyle =
+            gradient;
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+    }
+
+
+    /* =========================================================
+       DRAW FIELD
+       ========================================================= */
+
+    function drawField() {
+
+        /* field shadow */
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.35)";
+
+        roundRect(
+            field.x - 8,
+            field.y - 8,
+            field.width + 16,
+            field.height + 16,
+            18
+        );
+
+        ctx.fill();
+
+
+        /* grass */
+
+        var grass =
+            ctx.createLinearGradient(
+                field.x,
+                field.y,
+                field.x +
+                field.width,
+                field.y +
+                field.height
+            );
+
+        grass.addColorStop(
+            0,
+            "#23853e"
+        );
+
+        grass.addColorStop(
+            1,
+            "#11662c"
+        );
+
+
+        ctx.fillStyle =
+            grass;
+
+        ctx.fillRect(
+            field.x,
+            field.y,
+            field.width,
+            field.height
+        );
+
+
+        /* grass stripes */
+
+        var stripeWidth =
+            field.width /
+            12;
+
+
+        for (
+            var i = 0;
+            i < 12;
+            i++
+        ) {
+
+            if (
+                i % 2 === 0
+            ) {
+
+                ctx.fillStyle =
+                    "rgba(255,255,255,0.035)";
+
+                ctx.fillRect(
+                    field.x +
+                    i *
+                    stripeWidth,
+                    field.y,
+                    stripeWidth,
+                    field.height
+                );
+            }
+        }
+
+
+        /* lines */
+
+        ctx.strokeStyle =
+            "rgba(255,255,255,0.9)";
+
+        ctx.lineWidth =
+            4;
+
+        ctx.strokeRect(
+            field.x,
+            field.y,
+            field.width,
+            field.height
+        );
+
+
+        /* centre line */
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            field.x +
+            field.width / 2,
+            field.y
+        );
+
+        ctx.lineTo(
+            field.x +
+            field.width / 2,
+            field.y +
+            field.height
+        );
+
+        ctx.stroke();
+
+
+        /* centre circle */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            field.x +
+            field.width / 2,
+            field.y +
+            field.height / 2,
+            82,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.stroke();
+
+
+        /* centre dot */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            field.x +
+            field.width / 2,
+            field.y +
+            field.height / 2,
+            5,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.fill();
+
+
+        drawPenaltyArea(
+            "left"
+        );
+
+        drawPenaltyArea(
+            "right"
+        );
+
+
+        /* goals */
+
+        drawGoal(
+            "left"
+        );
+
+        drawGoal(
+            "right"
+        );
+    }
+
+
+    function drawPenaltyArea(
+        side
+    ) {
+
+        var boxWidth =
+            150;
+
+        var boxHeight =
+            290;
+
+        var x;
+
+
+        if (
+            side ===
+            "left"
+        ) {
+
+            x =
+                field.x;
+
+        } else {
+
+            x =
+                field.x +
+                field.width -
+                boxWidth;
+        }
+
+
+        var y =
+            field.y +
+            (field.height -
+            boxHeight) / 2;
+
+
+        ctx.strokeStyle =
+            "rgba(255,255,255,0.9)";
+
+        ctx.lineWidth =
+            4;
+
+        ctx.strokeRect(
+            x,
+            y,
+            boxWidth,
+            boxHeight
+        );
+
+
+        var smallWidth =
+            55;
+
+        var smallHeight =
+            140;
+
+
+        var sx;
+
+
+        if (
+            side ===
+            "left"
+        ) {
+
+            sx =
+                field.x;
+
+        } else {
+
+            sx =
+                field.x +
+                field.width -
+                smallWidth;
+        }
+
+
+        var sy =
+            field.y +
+            (field.height -
+            smallHeight) / 2;
+
+
+        ctx.strokeRect(
+            sx,
+            sy,
+            smallWidth,
+            smallHeight
+        );
+    }
+
+
+    function drawGoal(
+        side
+    ) {
+
+        var goalWidth =
+            32;
+
+        var goalHeight =
+            140;
+
+        var x;
+
+        var y =
+            field.y +
+            (field.height -
+            goalHeight) / 2;
+
+
+        if (
+            side ===
+            "left"
+        ) {
+
+            x =
+                field.x -
+                goalWidth;
+
+        } else {
+
+            x =
+                field.x +
+                field.width;
+        }
+
+
+        ctx.fillStyle =
+            "rgba(230,230,230,0.25)";
+
+        ctx.fillRect(
+            x,
+            y,
+            goalWidth,
+            goalHeight
+        );
+
+
+        ctx.strokeStyle =
+            "#ffffff";
+
+        ctx.lineWidth =
+            4;
+
+        ctx.strokeRect(
+            x,
+            y,
+            goalWidth,
+            goalHeight
+        );
+    }
+
+
+    /* =========================================================
+       DRAW PLAYERS
+       ========================================================= */
+
+    function drawPlayer(
+        player
+    ) {
+
+        /* shadow */
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            player.x,
+            player.y +
+            player.radius *
+            0.85,
+            player.radius *
+            0.9,
+            player.radius *
+            0.35,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.35)";
+
+        ctx.fill();
+
+
+        /* player body */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            player.x,
+            player.y,
+            player.radius,
+            0,
+            Math.PI * 2
+        );
+
+
+        if (
+            player.team ===
+            "home"
+        ) {
+
+            ctx.fillStyle =
+                "#1976ff";
+
+        } else {
+
+            ctx.fillStyle =
+                "#e52b35";
+        }
+
+
+        ctx.fill();
+
+
+        /* outline */
+
+        ctx.strokeStyle =
+            player.controlled
+                ? "#ffd83d"
+                : "#ffffff";
+
+        ctx.lineWidth =
+            player.controlled
+                ? 5
+                : 2;
+
+        ctx.stroke();
+
+
+        /* number */
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 13px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+        ctx.fillText(
+            String(player.number),
+            player.x,
+            player.y
+        );
+
+
+        /* controlled indicator */
+
+        if (
+            player.controlled
+        ) {
+
+            ctx.beginPath();
+
+            ctx.arc(
+                player.x,
+                player.y -
+                player.radius -
+                10,
+                5,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fillStyle =
+                "#ffe000";
+
+            ctx.fill();
+        }
+    }
+
+
+    /* =========================================================
+       DRAW BALL
+       ========================================================= */
+
+    function drawBall() {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            ball.x + 3,
+            ball.y + 5,
+            ball.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.35)";
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            ball.x,
+            ball.y,
+            ball.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "#222222";
+
+        ctx.lineWidth =
+            2;
+
+        ctx.stroke();
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            ball.x,
+            ball.y,
+            5,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "#222222";
+
+        ctx.fill();
+    }
+
+
+    /* =========================================================
+       SCOREBOARD
+       ========================================================= */
+
+    function drawScoreboard() {
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.75)";
+
+        roundRect(
+            500,
+            18,
+            280,
+            58,
+            15
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 26px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillText(
+            scoreHome +
+            "  -  " +
+            scoreAway,
+            640,
+            47
+        );
+
+
+        ctx.font =
+            "bold 13px Arial";
+
+        ctx.fillStyle =
+            "#dddddd";
+
+
+        var remaining =
+            Math.max(
+                0,
+                matchTime -
+                matchTimer
+            );
+
+
+        var seconds =
+            Math.floor(
+                remaining
+            );
+
+
+        ctx.fillText(
+            "MATCH  " +
+            seconds +
+            "s",
+            640,
+            68
+        );
+    }
+
+
+    /* =========================================================
+       CONTROLS
+       ========================================================= */
+
+    function drawControls() {
+
+        /* joystick */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            joystick.centerX,
+            joystick.centerY,
+            joystick.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.38)";
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "rgba(255,255,255,0.35)";
+
+        ctx.lineWidth =
+            3;
+
+        ctx.stroke();
+
+
+        var knobX =
+            joystick.centerX +
+            joystick.x *
+            42;
+
+        var knobY =
+            joystick.centerY +
+            joystick.y *
+            42;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            knobX,
+            knobY,
+            27,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "rgba(255,255,255,0.55)";
+
+        ctx.fill();
+
+
+        drawActionButton(
+            actionButtons.shoot,
+            "SHOOT"
+        );
+
+        drawActionButton(
+            actionButtons.pass,
+            "PASS"
+        );
+
+        drawActionButton(
+            actionButtons.sprint,
+            "RUN"
+        );
+
+
+        /* pause */
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.5)";
+
+        roundRect(
+            1160,
+            25,
+            70,
+            45,
+            10
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 16px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+        ctx.fillText(
+            "Ⅱ",
+            1195,
+            48
+        );
+    }
+
+
+    function drawActionButton(
+        button,
+        text
+    ) {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            button.x,
+            button.y,
+            button.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.5)";
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "rgba(255,255,255,0.45)";
+
+        ctx.lineWidth =
+            3;
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 13px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+        ctx.fillText(
+            text,
+            button.x,
+            button.y
+        );
+    }
+
+
+    /* =========================================================
+       MENU
+       ========================================================= */
+
+    function drawMenu() {
+
+        drawBackground();
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 64px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillText(
+            "FOOTBALL 3D",
+            640,
+            180
+        );
+
+
+        ctx.font =
+            "22px Arial";
+
+        ctx.fillStyle =
+            "#b9e7c7";
+
+
+        ctx.fillText(
+            "LOCAL FOOTBALL GAME",
+            640,
+            225
+        );
+
+
+        ctx.fillStyle =
+            "#159447";
+
+        roundRect(
+            480,
+            390,
+            320,
+            85,
+            18
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 28px Arial";
+
+        ctx.fillText(
+            "PLAY MATCH",
+            640,
+            433
+        );
+
+
+        ctx.font =
+            "16px Arial";
+
+        ctx.fillStyle =
+            "#cccccc";
+
+        ctx.fillText(
+            "Touch joystick + SHOOT / PASS",
+            640,
+            510
+        );
+
+
+        ctx.fillText(
+            "Keyboard: WASD / Arrow Keys",
+            640,
+            540
+        );
+    }
+
+
+    /* =========================================================
+       PAUSE
+       ========================================================= */
+
+    function drawPause() {
+
+        drawGameScene();
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.65)";
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 58px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.fillText(
+            "PAUSED",
+            640,
+            270
+        );
+
+
+        ctx.fillStyle =
+            "#159447";
+
+        roundRect(
+            480,
+            390,
+            320,
+            85,
+            18
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 26px Arial";
+
+        ctx.fillText(
+            "RESUME",
+            640,
+            433
+        );
+    }
+
+
+    /* =========================================================
+       GAME OVER
+       ========================================================= */
+
+    function drawGameOver() {
+
+        drawGameScene();
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,0.72)";
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 54px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.fillText(
+            winnerMessage,
+            640,
+            270
+        );
+
+
+        ctx.font =
+            "bold 42px Arial";
+
+        ctx.fillText(
+            scoreHome +
+            "  -  " +
+            scoreAway,
+            640,
+            330
+        );
+
+
+        ctx.fillStyle =
+            "#159447";
+
+        roundRect(
+            480,
+            390,
+            320,
+            85,
+            18
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.font =
+            "bold 26px Arial";
+
+        ctx.fillText(
+            "PLAY AGAIN",
+            640,
+            433
+        );
+    }
+
+
+    /* =========================================================
+       GAME SCENE
+       ========================================================= */
+
+    function drawGameScene() {
+
+        drawBackground();
+
+        drawField();
+
+
+        for (
+            var i = 0;
+            i < allPlayers.length;
+            i++
+        ) {
+
+            drawPlayer(
+                allPlayers[i]
+            );
+        }
+
+
+        drawBall();
+
+        drawScoreboard();
+
+        drawControls();
+
+
+        if (
+            winnerMessage !== ""
+        ) {
+
+            ctx.fillStyle =
+                "rgba(0,0,0,0.7)";
+
+            roundRect(
+                425,
+                300,
+                430,
+                90,
+                20
+            );
+
+            ctx.fill();
+
+
+            ctx.fillStyle =
+                "#ffffff";
+
+            ctx.font =
+                "bold 30px Arial";
+
+            ctx.textAlign =
+                "center";
+
+            ctx.textBaseline =
+                "middle";
+
+            ctx.fillText(
+                winnerMessage,
+                640,
+                345
+            );
+        }
+    }
+
+
+    /* =========================================================
+       UPDATE
+       ========================================================= */
+
+    function update(
+        dt
+    ) {
+
+        if (
+            gameState !==
+            "playing"
+        ) {
+
+            return;
+        }
+
+
+        updateControlledPlayer(
+            dt
+        );
+
+
+        for (
+            var i = 0;
+            i < allPlayers.length;
+            i++
+        ) {
+
+            updateAI(
+                allPlayers[i],
+                dt
+            );
+        }
+
+
+        updateBallCollisions();
+
+        updateBall(
+            dt
+        );
+
+
+        /* keep ball near controlled player */
+
+        if (
+            ball.owner ===
+            controlledPlayer
+        ) {
+
+            var dx =
+                controlledPlayer.x -
+                ball.x;
+
+            var dy =
+                controlledPlayer.y -
+                ball.y;
+
+
+            var d =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy
+                );
+
+
+            if (
+                d > 35
+            ) {
+
+                dx /= d;
+                dy /= d;
+
+
+                ball.x =
+                    controlledPlayer.x -
+                    dx * 20;
+
+                ball.y =
+                    controlledPlayer.y -
+                    dy * 20;
+            }
+        }
+
+
+        updateMatchTimer(
+            dt
+        );
+    }
+
+
+    /* =========================================================
+       RENDER
+       ========================================================= */
+
+    function render() {
+
+        if (
+            gameState ===
+            "menu"
+        ) {
+
+            drawMenu();
+
+        } else if (
+            gameState ===
+            "playing"
+        ) {
+
+            drawGameScene();
+
+        } else if (
+            gameState ===
+            "pause"
+        ) {
+
+            drawPause();
+
+        } else if (
+            gameState ===
+            "gameover"
+        ) {
+
+            drawGameOver();
+        }
+    }
+
+
+    /* =========================================================
+       MAIN LOOP
+       ========================================================= */
+
+    function gameLoop(
+        now
+    ) {
+
+        var dt =
+            (now - lastTime) /
+            1000;
+
+
+        lastTime =
+            now;
+
+
+        if (
+            dt > 0.05
+        ) {
+
+            dt = 0.05;
+        }
+
+
+        update(
+            dt
+        );
+
+        render();
+
+
+        requestAnimationFrame(
+            gameLoop
+        );
+    }
+
+
+    /* =========================================================
+       ORIENTATION
+       ========================================================= */
+
+    function forceLandscapeMessage() {
+
+        var old =
+            document.getElementById(
+                "orientation-message"
+            );
+
+
+        if (!old) {
+
+            old =
+                document.createElement(
+                    "div"
+                );
+
+            old.id =
+                "orientation-message";
+
+            old.style.position =
+                "fixed";
+
+            old.style.left =
+                "0";
+
+            old.style.top =
+                "0";
+
+            old.style.right =
+                "0";
+
+            old.style.bottom =
+                "0";
+
+            old.style.zIndex =
+                "10000";
+
+            old.style.display =
+                "none";
+
+            old.style.alignItems =
+                "center";
+
+            old.style.justifyContent =
+                "center";
+
+            old.style.textAlign =
+                "center";
+
+            old.style.background =
+                "#071b10";
+
+            old.style.color =
+                "#ffffff";
+
+            old.style.font =
+                "bold 24px Arial";
+
+            old.textContent =
+                "Please turn your phone sideways.";
+
+            document.body.appendChild(
+                old
+            );
+        }
+
+
+        if (
+            window.innerHeight >
+            window.innerWidth
+        ) {
+
+            old.style.display =
+                "flex";
+
+        } else {
+
+            old.style.display =
+                "none";
+        }
+    }
+
 
     window.addEventListener(
         "resize",
-        function () {
-
-            updateFieldSize();
-
-            drawGame();
-        }
+        forceLandscapeMessage
     );
-
 
     window.addEventListener(
         "orientationchange",
         function () {
 
             setTimeout(
-                function () {
-
-                    updateFieldSize();
-
-                    drawGame();
-
-                },
-                250
+                forceLandscapeMessage,
+                300
             );
         }
     );
@@ -1750,15 +3259,21 @@ document.addEventListener("DOMContentLoaded", function () {
        INITIALIZE
        ========================================================= */
 
-    updateFieldSize();
+    forceLandscapeMessage();
 
-    updateScore();
+    resetMatch();
 
-    drawGame();
+    gameState =
+        "menu";
 
-    showScreen(
-        "screen-menu"
+    gameRunning =
+        false;
+
+    render();
+
+
+    requestAnimationFrame(
+        gameLoop
     );
-
 
 });
