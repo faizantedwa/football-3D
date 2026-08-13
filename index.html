@@ -1,1 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
 
+    <meta
+        name="viewport"
+        content="width=device-width,
+        initial-scale=1.0,
+        maximum-scale=1.0,
+        user-scalable=no"
+    >
+
+    <title>Local Football 3D</title>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- LOADING SCREEN -->
+    <div id="loadingScreen">
+
+        <div class="loadingLogo">⚽</div>
+
+        <div class="loadingTitle">
+            LOCAL FOOTBALL 3D
+        </div>
+
+        <div class="loadingText">
+            LOADING GAME...
+        </div>
+
+        <div class="loadingBar">
+            <div id="loadingProgress"></div>
+        </div>
+
+        <div id="loadingPercent">
+            0%
+        </div>
+
+    </div>
+
+
+    <!-- MAIN MENU -->
+    <div id="menuScreen" class="hidden">
+
+        <div class="menuBox">
+
+            <div class="gameLogo">
+                ⚽
+            </div>
+
+            <h1>
+                LOCAL FOOTBALL 3D
+            </h1>
+
+            <p>
+                OFFLINE FOOTBALL GAME
+            </p>
+
+            <button id="startGame">
+                ▶ START GAME
+            </button>
+
+            <button id="howToPlay">
+                🎮 HOW TO PLAY
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- GAME -->
+    <div id="gameScreen" class="hidden">
+
+        <canvas id="gameCanvas"></canvas>
+
+
+        <!-- SCORE -->
+        <div id="scoreBoard">
+            <span id="blueScore">BLUE 0</span>
+            <span> VS </span>
+            <span id="redScore">RED 0</span>
+        </div>
+
+
+        <!-- GAME MESSAGE -->
+        <div id="gameMessage"></div>
+
+
+        <!-- PLAYER 1 CONTROLS -->
+        <div id="controls">
+
+            <div id="joystickArea">
+
+                <div id="joystick">
+                    <div id="joystickKnob"></div>
+                </div>
+
+            </div>
+
+
+            <div id="actionButtons">
+
+                <button
+                    id="passButton"
+                    class="gameButton"
+                >
+                    PASS
+                </button>
+
+                <button
+                    id="shootButton"
+                    class="gameButton shoot"
+                >
+                    SHOOT
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- PAUSE -->
+        <button
+            id="pauseButton"
+            class="pauseButton"
+        >
+            II
+        </button>
+
+
+        <!-- PAUSE MENU -->
+        <div
+            id="pauseMenu"
+            class="pauseMenu hidden"
+        >
+
+            <h2>PAUSED</h2>
+
+            <button id="resumeButton">
+                ▶ RESUME
+            </button>
+
+            <button id="menuButton">
+                ⌂ MAIN MENU
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- HOW TO PLAY -->
+    <div
+        id="helpScreen"
+        class="overlay hidden"
+    >
+
+        <div class="helpBox">
+
+            <h2>
+                HOW TO PLAY
+            </h2>
+
+            <p>
+                🕹 Move the player with the joystick.
+            </p>
+
+            <p>
+                ⚽ PASS sends the ball forward.
+            </p>
+
+            <p>
+                🚀 SHOOT kicks toward the goal.
+            </p>
+
+            <p>
+                🏆 Score more goals than the opponent.
+            </p>
+
+            <button id="closeHelp">
+                CLOSE
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script src="game.js"></script>
+
+</body>
+      </html>
