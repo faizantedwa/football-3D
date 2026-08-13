@@ -9,39 +9,28 @@ jobs:
 
     steps:
 
-      # =====================================================
-      # 1. CHECKOUT
-      # =====================================================
+      # ============================================
+      # CHECKOUT
+      # ============================================
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
-      # =====================================================
-      # 2. JAVA 17
-      # =====================================================
+      # ============================================
+      # JAVA 17
+      # ============================================
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
-          cache: gradle
 
 
-      # =====================================================
-      # 3. GRADLE 8.9
-      # =====================================================
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.9"
-
-
-      # =====================================================
-      # 4. CHECK GAME FILES
-      # =====================================================
+      # ============================================
+      # CHECK GAME FILES
+      # ============================================
 
       - name: Check game files
         shell: bash
@@ -54,16 +43,14 @@ jobs:
           test -f game.js
           test -f styles.css
 
-          echo "================================"
-          echo "index.html  : OK"
-          echo "game.js     : OK"
-          echo "styles.css  : OK"
-          echo "================================"
+          echo "index.html OK"
+          echo "game.js OK"
+          echo "styles.css OK"
 
 
-      # =====================================================
-      # 5. CREATE ANDROID PROJECT
-      # =====================================================
+      # ============================================
+      # CREATE ANDROID PROJECT
+      # ============================================
 
       - name: Create Android project
         shell: bash
@@ -79,18 +66,18 @@ jobs:
           mkdir -p app/src/main/res/drawable
 
 
-          # -------------------------------------------------
+          # ------------------------------------------
           # COPY GAME FILES
-          # -------------------------------------------------
+          # ------------------------------------------
 
           cp index.html app/src/main/assets/index.html
           cp game.js app/src/main/assets/game.js
           cp styles.css app/src/main/assets/styles.css
 
 
-          # -------------------------------------------------
+          # ------------------------------------------
           # ICON
-          # -------------------------------------------------
+          # ------------------------------------------
 
           if [ -f "icon.png" ]; then
 
@@ -106,9 +93,9 @@ jobs:
           fi
 
 
-          # =================================================
+          # ==========================================
           # SETTINGS.GRADLE
-          # =================================================
+          # ==========================================
 
           cat > settings.gradle <<'EOF'
 
@@ -138,9 +125,9 @@ jobs:
           EOF
 
 
-          # =================================================
+          # ==========================================
           # ROOT BUILD.GRADLE
-          # =================================================
+          # ==========================================
 
           cat > build.gradle <<'EOF'
 
@@ -151,9 +138,9 @@ jobs:
           EOF
 
 
-          # =================================================
+          # ==========================================
           # APP BUILD.GRADLE
-          # =================================================
+          # ==========================================
 
           cat > app/build.gradle <<'EOF'
 
@@ -179,11 +166,11 @@ jobs:
               }
 
               buildTypes {
-                  release {
+                  debug {
                       minifyEnabled false
                   }
 
-                  debug {
+                  release {
                       minifyEnabled false
                   }
               }
@@ -192,9 +179,9 @@ jobs:
           EOF
 
 
-          # =================================================
+          # ==========================================
           # THEME
-          # =================================================
+          # ==========================================
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
 
@@ -204,15 +191,11 @@ jobs:
                   name="AppTheme"
                   parent="android:style/Theme.Material.Light.NoActionBar">
 
-                  <item name="android:fontFamily">sans</item>
-
                   <item name="android:windowFullscreen">true</item>
 
-                  <item name="android:windowActionModeOverlay">true</item>
-
-                  <item name="android:colorAccent">#ffffff</item>
-
                   <item name="android:windowNoTitle">true</item>
+
+                  <item name="android:windowActionModeOverlay">true</item>
 
               </style>
 
@@ -221,9 +204,9 @@ jobs:
           EOF
 
 
-          # =================================================
+          # ==========================================
           # ANDROID MANIFEST
-          # =================================================
+          # ==========================================
 
           cat > app/src/main/AndroidManifest.xml <<EOF
 
@@ -262,9 +245,9 @@ jobs:
           EOF
 
 
-          # =================================================
+          # ==========================================
           # MAIN ACTIVITY JAVA
-          # =================================================
+          # ==========================================
 
           cat > app/src/main/java/com/faizantedwa/footballgame/MainActivity.java <<'EOF'
 
@@ -272,6 +255,8 @@ jobs:
 
           import android.app.Activity;
           import android.os.Bundle;
+          import android.content.pm.ActivityInfo;
+          import android.graphics.Color;
           import android.view.View;
           import android.view.Window;
           import android.view.WindowManager;
@@ -286,9 +271,23 @@ jobs:
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
+
                   super.onCreate(savedInstanceState);
 
-                  requestLandscapeFullscreen();
+                  requestWindowFeature(
+                          Window.FEATURE_NO_TITLE
+                  );
+
+                  setRequestedOrientation(
+                          ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                  );
+
+                  getWindow().setFlags(
+                          WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                          WindowManager.LayoutParams.FLAG_FULLSCREEN
+                  );
+
+                  hideSystemUI();
 
                   webView = new WebView(this);
 
@@ -307,20 +306,18 @@ jobs:
 
                   settings.setMediaPlaybackRequiresUserGesture(false);
 
+                  webView.setBackgroundColor(Color.BLACK);
+
+                  webView.setOverScrollMode(
+                          View.OVER_SCROLL_NEVER
+                  );
+
                   webView.setWebViewClient(
                           new WebViewClient()
                   );
 
                   webView.setWebChromeClient(
                           new WebChromeClient()
-                  );
-
-                  webView.setOverScrollMode(
-                          View.OVER_SCROLL_NEVER
-                  );
-
-                  webView.setBackgroundColor(
-                          android.graphics.Color.BLACK
                   );
 
                   setContentView(webView);
@@ -331,36 +328,24 @@ jobs:
               }
 
 
-              private void requestLandscapeFullscreen() {
+              private void hideSystemUI() {
 
-                  requestWindowFeature(
-                          Window.FEATURE_NO_TITLE
-                  );
+                  getWindow()
+                          .getDecorView()
+                          .setSystemUiVisibility(
 
-                  getWindow().setFlags(
-                          WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                          WindowManager.LayoutParams.FLAG_FULLSCREEN
-                  );
+                                  View.SYSTEM_UI_FLAG_FULLSCREEN
 
-                  getWindow().setRequestedOrientation(
-                          android.content.pm.ActivityInfo
-                                  .SCREEN_ORIENTATION_LANDSCAPE
-                  );
+                                  | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 
-                  getWindow().getDecorView().setSystemUiVisibility(
+                                  | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 
-                          View.SYSTEM_UI_FLAG_FULLSCREEN
+                                  | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
 
-                          | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                  | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
 
-                          | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-
-                          | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-
-                          | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-
-                          | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                  );
+                                  | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                          );
               }
 
 
@@ -371,23 +356,7 @@ jobs:
                   super.onWindowFocusChanged(hasFocus);
 
                   if (hasFocus) {
-
-                      getWindow()
-                              .getDecorView()
-                              .setSystemUiVisibility(
-
-                                      View.SYSTEM_UI_FLAG_FULLSCREEN
-
-                                      | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-
-                                      | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-
-                                      | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-
-                                      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-
-                                      | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                              );
+                      hideSystemUI();
                   }
               }
 
@@ -398,7 +367,6 @@ jobs:
                   if (webView != null) {
 
                       webView.evaluateJavascript(
-
                               "(function(){"
                               + "if(window.handleAndroidBack){"
                               + "window.handleAndroidBack();"
@@ -406,7 +374,6 @@ jobs:
                               + "window.goBack();"
                               + "}"
                               + "})()",
-
                               null
                       );
 
@@ -436,9 +403,9 @@ jobs:
           EOF
 
 
-      # =====================================================
-      # 6. VERIFY ANDROID PROJECT
-      # =====================================================
+      # ============================================
+      # VERIFY PROJECT
+      # ============================================
 
       - name: Verify Android project
         shell: bash
@@ -446,9 +413,9 @@ jobs:
 
           set -e
 
-          echo "========================================"
+          echo "================================"
           echo "VERIFYING PROJECT"
-          echo "========================================"
+          echo "================================"
 
           test -f settings.gradle
           test -f build.gradle
@@ -463,37 +430,56 @@ jobs:
           test -f app/src/main/assets/game.js
           test -f app/src/main/assets/styles.css
 
-          echo "========================================"
-          echo "ALL PROJECT FILES ARE PRESENT"
-          echo "========================================"
+          echo "All project files are OK."
 
 
-      # =====================================================
-      # 7. BUILD DEBUG APK
-      # =====================================================
+      # ============================================
+      # DOWNLOAD GRADLE 8.9 DIRECTLY
+      # ============================================
 
-      - name: Build APK
+      - name: Install Gradle 8.9
         shell: bash
         run: |
 
           set -e
 
-          echo "========================================"
-          echo "BUILDING APK"
-          echo "========================================"
+          wget -q \
+            https://services.gradle.org/distributions/gradle-8.9-bin.zip \
+            -O /tmp/gradle.zip
 
-          gradle --version
+          mkdir -p /opt/gradle
+
+          unzip -q \
+            /tmp/gradle.zip \
+            -d /opt/gradle
+
+          echo "/opt/gradle/gradle-8.9/bin" >> "$GITHUB_PATH"
+
+          /opt/gradle/gradle-8.9/bin/gradle --version
+
+
+      # ============================================
+      # BUILD APK
+      # ============================================
+
+      - name: Build Debug APK
+        shell: bash
+        run: |
+
+          set -e
+
+          echo "================================"
+          echo "BUILDING APK"
+          echo "================================"
 
           gradle assembleDebug --no-daemon
 
-          echo "========================================"
-          echo "BUILD FINISHED"
-          echo "========================================"
+          echo "APK BUILD FINISHED."
 
 
-      # =====================================================
-      # 8. CHECK APK
-      # =====================================================
+      # ============================================
+      # CHECK APK
+      # ============================================
 
       - name: Check APK
         shell: bash
@@ -503,20 +489,18 @@ jobs:
 
           APK="app/build/outputs/apk/debug/app-debug.apk"
 
-          echo "Checking APK..."
-
           test -f "$APK"
+
+          echo "================================"
+          echo "APK FOUND"
+          echo "================================"
 
           ls -lh "$APK"
 
-          echo "========================================"
-          echo "APK CREATED SUCCESSFULLY"
-          echo "========================================"
 
-
-      # =====================================================
-      # 9. UPLOAD APK
-      # =====================================================
+      # ============================================
+      # UPLOAD APK
+      # ============================================
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
