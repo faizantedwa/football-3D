@@ -1,25 +1,22 @@
-name: Build Football Game APK
+name: Build Local Football 3D APK
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
+
   build:
+
     runs-on: ubuntu-latest
 
     steps:
 
-      # ============================================
-      # CHECKOUT
-      # ============================================
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
-      # ============================================
-      # JAVA 17
-      # ============================================
 
       - name: Setup Java 17
         uses: actions/setup-java@v5
@@ -28,29 +25,24 @@ jobs:
           java-version: "17"
 
 
-      # ============================================
-      # CHECK GAME FILES
-      # ============================================
-
-      - name: Check game files
+      - name: Check source files
         shell: bash
         run: |
+
           set -e
 
-          echo "Checking game files..."
+          echo "Checking Football 3D files..."
 
           test -f index.html
-          test -f game.js
           test -f styles.css
+          test -f game.js
 
-          echo "index.html OK"
-          echo "game.js OK"
-          echo "styles.css OK"
+          echo "index.html found"
+          echo "styles.css found"
+          echo "game.js found"
 
+          echo "All source files OK"
 
-      # ============================================
-      # CREATE ANDROID PROJECT
-      # ============================================
 
       - name: Create Android project
         shell: bash
@@ -58,409 +50,346 @@ jobs:
 
           set -e
 
-          echo "Creating Android project..."
-
           mkdir -p app/src/main/assets
-          mkdir -p app/src/main/java/com/faizantedwa/footballgame
+          mkdir -p app/src/main/java/com/faizantedwa/football3d
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
 
 
-          # ------------------------------------------
-          # COPY GAME FILES
-          # ------------------------------------------
+          cp index.html \
+            app/src/main/assets/index.html
 
-          cp index.html app/src/main/assets/index.html
-          cp game.js app/src/main/assets/game.js
-          cp styles.css app/src/main/assets/styles.css
+          cp styles.css \
+            app/src/main/assets/styles.css
 
+          cp game.js \
+            app/src/main/assets/game.js
 
-          # ------------------------------------------
-          # ICON
-          # ------------------------------------------
-
-          if [ -f "icon.png" ]; then
-
-            cp icon.png \
-              app/src/main/res/drawable/app_icon.png
-
-            ICON_LINE='android:icon="@drawable/app_icon"'
-
-          else
-
-            ICON_LINE=''
-
-          fi
-
-
-          # ==========================================
-          # SETTINGS.GRADLE
-          # ==========================================
 
           cat > settings.gradle <<'EOF'
 
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
+pluginManagement {
 
-          dependencyResolutionManagement {
-              repositoriesMode.set(
-                  RepositoriesMode.FAIL_ON_PROJECT_REPOS
-              )
+    repositories {
 
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          rootProject.name = "FootballGame"
-
-          include(":app")
-
-          EOF
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
 
 
-          # ==========================================
-          # ROOT BUILD.GRADLE
-          # ==========================================
+dependencyResolutionManagement {
+
+    repositoriesMode.set(
+        RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    )
+
+    repositories {
+
+        google()
+        mavenCentral()
+    }
+}
+
+
+rootProject.name = "Football3D"
+
+include(":app")
+
+EOF
+
 
           cat > build.gradle <<'EOF'
 
-          plugins {
-              id 'com.android.application' version '8.7.3' apply false
-          }
+plugins {
 
-          EOF
+    id 'com.android.application'
+        version '8.7.3'
+        apply false
+}
 
+EOF
 
-          # ==========================================
-          # APP BUILD.GRADLE
-          # ==========================================
 
           cat > app/build.gradle <<'EOF'
 
-          plugins {
-              id 'com.android.application'
-          }
+plugins {
 
-          android {
-              namespace 'com.faizantedwa.footballgame'
-
-              compileSdk 35
-
-              defaultConfig {
-                  applicationId 'com.faizantedwa.footballgame'
-
-                  minSdk 23
-
-                  targetSdk 35
-
-                  versionCode 1
-
-                  versionName '1.0'
-              }
-
-              buildTypes {
-                  debug {
-                      minifyEnabled false
-                  }
-
-                  release {
-                      minifyEnabled false
-                  }
-              }
-          }
-
-          EOF
+    id 'com.android.application'
+}
 
 
-          # ==========================================
-          # THEME
-          # ==========================================
+android {
+
+    namespace 'com.faizantedwa.football3d'
+
+    compileSdk 35
+
+
+    defaultConfig {
+
+        applicationId =
+            'com.faizantedwa.football3d'
+
+        minSdk 23
+
+        targetSdk 35
+
+        versionCode 1
+
+        versionName '1.0'
+    }
+
+
+    buildTypes {
+
+        release {
+
+            minifyEnabled false
+
+        }
+    }
+}
+
+EOF
+
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
 
-          <resources>
+<resources>
 
-              <style
-                  name="AppTheme"
-                  parent="android:style/Theme.Material.Light.NoActionBar">
+    <style
+        name="AppTheme"
+        parent="android:style/Theme.Material.Light.NoActionBar">
 
-                  <item name="android:windowFullscreen">true</item>
+        <item name="android:fontFamily">sans</item>
 
-                  <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
 
-                  <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
 
-              </style>
+        <item name="android:colorAccent">#168cff</item>
 
-          </resources>
+    </style>
 
-          EOF
+</resources>
 
+EOF
 
-          # ==========================================
-          # ANDROID MANIFEST
-          # ==========================================
 
-          cat > app/src/main/AndroidManifest.xml <<EOF
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
 
-          <manifest
-              xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-              <application
-                  android:theme="@style/AppTheme"
-                  android:label="Football Game"
-                  android:allowBackup="false"
-                  android:supportsRtl="true"
-                  $ICON_LINE>
 
-                  <activity
-                      android:name=".MainActivity"
-                      android:screenOrientation="landscape"
-                      android:configChanges="orientation|screenSize|keyboardHidden"
-                      android:exported="true">
+    <application
 
-                      <intent-filter>
+        android:theme="@style/AppTheme"
 
-                          <action
-                              android:name="android.intent.action.MAIN" />
+        android:label="Local Football 3D"
 
-                          <category
-                              android:name="android.intent.category.LAUNCHER" />
+        android:allowBackup="false"
 
-                      </intent-filter>
+        android:supportsRtl="true">
 
-                  </activity>
 
-              </application>
+        <activity
 
-          </manifest>
+            android:name=".MainActivity"
 
-          EOF
+            android:screenOrientation="landscape"
 
+            android:configChanges="orientation|screenSize|keyboardHidden"
 
-          # ==========================================
-          # MAIN ACTIVITY JAVA
-          # ==========================================
+            android:exported="true">
 
-          cat > app/src/main/java/com/faizantedwa/footballgame/MainActivity.java <<'EOF'
 
-          package com.faizantedwa.footballgame;
+            <intent-filter>
 
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.content.pm.ActivityInfo;
-          import android.graphics.Color;
-          import android.view.View;
-          import android.view.Window;
-          import android.view.WindowManager;
-          import android.webkit.WebChromeClient;
-          import android.webkit.WebSettings;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
+                <action
+                    android:name="android.intent.action.MAIN" />
 
-          public class MainActivity extends Activity {
+                <category
+                    android:name="android.intent.category.LAUNCHER" />
 
-              private WebView webView;
+            </intent-filter>
 
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
+        </activity>
 
-                  super.onCreate(savedInstanceState);
 
-                  requestWindowFeature(
-                          Window.FEATURE_NO_TITLE
-                  );
+    </application>
 
-                  setRequestedOrientation(
-                          ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                  );
+</manifest>
 
-                  getWindow().setFlags(
-                          WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                          WindowManager.LayoutParams.FLAG_FULLSCREEN
-                  );
+EOF
 
-                  hideSystemUI();
 
-                  webView = new WebView(this);
+          cat > app/src/main/java/com/faizantedwa/football3d/MainActivity.java <<'EOF'
 
-                  WebSettings settings =
-                          webView.getSettings();
+package com.faizantedwa.football3d;
 
-                  settings.setJavaScriptEnabled(true);
 
-                  settings.setDomStorageEnabled(true);
+import android.app.Activity;
 
-                  settings.setAllowFileAccess(true);
+import android.os.Bundle;
 
-                  settings.setAllowContentAccess(true);
+import android.view.View;
 
-                  settings.setDatabaseEnabled(true);
+import android.webkit.WebSettings;
 
-                  settings.setMediaPlaybackRequiresUserGesture(false);
+import android.webkit.WebView;
 
-                  webView.setBackgroundColor(Color.BLACK);
+import android.webkit.WebViewClient;
 
-                  webView.setOverScrollMode(
-                          View.OVER_SCROLL_NEVER
-                  );
 
-                  webView.setWebViewClient(
-                          new WebViewClient()
-                  );
+public class MainActivity
+        extends Activity {
 
-                  webView.setWebChromeClient(
-                          new WebChromeClient()
-                  );
 
-                  setContentView(webView);
+    private WebView webView;
 
-                  webView.loadUrl(
-                          "file:///android_asset/index.html"
-                  );
-              }
 
+    @Override
+    protected void onCreate(
+            Bundle savedInstanceState) {
 
-              private void hideSystemUI() {
+        super.onCreate(
+                savedInstanceState
+        );
 
-                  getWindow()
-                          .getDecorView()
-                          .setSystemUiVisibility(
 
-                                  View.SYSTEM_UI_FLAG_FULLSCREEN
+        getWindow()
+                .setFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
+                );
 
-                                  | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 
-                                  | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        webView =
+            new WebView(this);
 
-                                  | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
 
-                                  | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        WebSettings settings =
+            webView.getSettings();
 
-                                  | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                          );
-              }
 
+        settings.setJavaScriptEnabled(
+            true
+        );
 
-              @Override
-              public void onWindowFocusChanged(
-                      boolean hasFocus) {
 
-                  super.onWindowFocusChanged(hasFocus);
+        settings.setDomStorageEnabled(
+            true
+        );
 
-                  if (hasFocus) {
-                      hideSystemUI();
-                  }
-              }
 
+        settings.setAllowFileAccess(
+            true
+        );
 
-              @Override
-              public void onBackPressed() {
 
-                  if (webView != null) {
+        settings.setAllowContentAccess(
+            true
+        );
 
-                      webView.evaluateJavascript(
-                              "(function(){"
-                              + "if(window.handleAndroidBack){"
-                              + "window.handleAndroidBack();"
-                              + "}else if(window.goBack){"
-                              + "window.goBack();"
-                              + "}"
-                              + "})()",
-                              null
-                      );
 
-                  } else {
+        settings.setMediaPlaybackRequiresUserGesture(
+            false
+        );
 
-                      super.onBackPressed();
-                  }
-              }
 
+        webView.setBackgroundColor(
+            android.graphics.Color.BLACK
+        );
 
-              @Override
-              protected void onDestroy() {
 
-                  if (webView != null) {
+        webView.setWebViewClient(
+            new WebViewClient()
+        );
 
-                      webView.stopLoading();
 
-                      webView.destroy();
+        webView.setOverScrollMode(
+            View.OVER_SCROLL_NEVER
+        );
 
-                      webView = null;
-                  }
 
-                  super.onDestroy();
-              }
-          }
+        setContentView(
+            webView
+        );
 
-          EOF
 
+        webView.loadUrl(
+            "file:///android_asset/index.html"
+        );
+    }
 
-      # ============================================
-      # VERIFY PROJECT
-      # ============================================
 
-      - name: Verify Android project
+    @Override
+    public void onBackPressed() {
+
+        if (webView != null) {
+
+            webView.evaluateJavascript(
+
+                "(function(){"
+                + "if(window.handleAndroidBack){"
+                + "window.handleAndroidBack();"
+                + "}"
+                + "})()",
+
+                null
+            );
+
+        } else {
+
+            super.onBackPressed();
+        }
+    }
+}
+
+EOF
+
+
+      - name: Verify generated project
         shell: bash
         run: |
 
           set -e
 
-          echo "================================"
-          echo "VERIFYING PROJECT"
-          echo "================================"
+          echo "Verifying Android project..."
 
           test -f settings.gradle
+
           test -f build.gradle
+
           test -f app/build.gradle
 
           test -f app/src/main/AndroidManifest.xml
 
-          test -f \
-            app/src/main/java/com/faizantedwa/footballgame/MainActivity.java
+          test -f app/src/main/java/com/faizantedwa/football3d/MainActivity.java
 
           test -f app/src/main/assets/index.html
-          test -f app/src/main/assets/game.js
+
           test -f app/src/main/assets/styles.css
 
-          echo "All project files are OK."
+          test -f app/src/main/assets/game.js
+
+          echo "Android project verified."
 
 
-      # ============================================
-      # DOWNLOAD GRADLE 8.9 DIRECTLY
-      # ============================================
-
-      - name: Install Gradle 8.9
+      - name: Create Gradle wrapper
         shell: bash
         run: |
 
           set -e
 
-          wget -q \
-            https://services.gradle.org/distributions/gradle-8.9-bin.zip \
-            -O /tmp/gradle.zip
+          gradle wrapper \
+            --gradle-version 8.9
 
-          mkdir -p /opt/gradle
+          chmod +x gradlew
 
-          unzip -q \
-            /tmp/gradle.zip \
-            -d /opt/gradle
-
-          echo "/opt/gradle/gradle-8.9/bin" >> "$GITHUB_PATH"
-
-          /opt/gradle/gradle-8.9/bin/gradle --version
-
-
-      # ============================================
-      # BUILD APK
-      # ============================================
 
       - name: Build Debug APK
         shell: bash
@@ -468,20 +397,12 @@ jobs:
 
           set -e
 
-          echo "================================"
-          echo "BUILDING APK"
-          echo "================================"
-
-          gradle assembleDebug --no-daemon
-
-          echo "APK BUILD FINISHED."
+          ./gradlew \
+            --no-daemon \
+            assembleDebug
 
 
-      # ============================================
-      # CHECK APK
-      # ============================================
-
-      - name: Check APK
+      - name: Verify APK
         shell: bash
         run: |
 
@@ -491,21 +412,21 @@ jobs:
 
           test -f "$APK"
 
-          echo "================================"
-          echo "APK FOUND"
-          echo "================================"
+          echo "APK successfully created."
 
           ls -lh "$APK"
 
 
-      # ============================================
-      # UPLOAD APK
-      # ============================================
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
+
         with:
-          name: Football-Game-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+
+          name: Local-Football-3D-APK
+
+          path:
+            app/build/outputs/apk/debug/app-debug.apk
+
           if-no-files-found: error
+
           retention-days: 7
